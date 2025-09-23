@@ -1,0 +1,120 @@
+.d3-heatmap-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: inline-block;
+}
+
+.d3-heatmap-container svg {
+  display: block;
+  border-radius: 8px;
+}
+
+/* Axis styling */
+.d3-heatmap-container .x-axis path,
+.d3-heatmap-container .y-axis path {
+  stroke: #333;
+  stroke-width: 1;
+  fill: none;
+}
+
+.d3-heatmap-container .x-axis line,
+.d3-heatmap-container .y-axis line {
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.d3-heatmap-container .x-axis text,
+.d3-heatmap-container .y-axis text {
+  fill: #333;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Legend styling */
+.d3-heatmap-container .legend text {
+  fill: #666;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Cell hover effects */
+.d3-heatmap-container .cell {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.d3-heatmap-container .cell:hover {
+  stroke: #333 !important;
+  stroke-width: 2 !important;
+}
+
+/* Tooltip styling */
+.heatmap-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: white !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+  pointer-events: none !important;
+  z-index: 1000 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  max-width: 200px !important;
+  line-height: 1.4 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .d3-heatmap-container {
+    overflow-x: auto;
+  }
+  
+  .d3-heatmap-container svg {
+    min-width: 400px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .heatmap-tooltip {
+    display: none !important;
+  }
+  
+  .d3-heatmap-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .d3-heatmap-container {
+    border: 2px solid #000;
+  }
+  
+  .d3-heatmap-container .x-axis path,
+  .d3-heatmap-container .y-axis path,
+  .d3-heatmap-container .x-axis line,
+  .d3-heatmap-container .y-axis line {
+    stroke: #000;
+    stroke-width: 2;
+  }
+  
+  .d3-heatmap-container .x-axis text,
+  .d3-heatmap-container .y-axis text {
+    fill: #000;
+    font-weight: bold;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .d3-heatmap-container .cell {
+    transition: none;
+  }
+  
+  .heatmap-tooltip {
+    transition: none !important;
+  }
+}", "original_text": "", "replace_all": false}]

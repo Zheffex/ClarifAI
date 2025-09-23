@@ -1,0 +1,395 @@
+.chart-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.chart-info {
+  flex: 1;
+}
+
+.chart-title {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.chart-description {
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chart-toggles {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toggle-button {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.toggle-button:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.toggle-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.export-controls {
+  position: relative;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.dropdown-toggle:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 120px;
+  margin-top: 0.25rem;
+}
+
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  color: #333;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color 0.2s;
+}
+
+.dropdown-menu button:hover:not(:disabled) {
+  background: #f8f9fa;
+}
+
+.dropdown-menu button:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.fullscreen-button {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.fullscreen-button:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.chart-content {
+  padding: 1rem;
+  position: relative;
+}
+
+.chart-content canvas {
+  max-width: 100%;
+  height: auto !important;
+}
+
+.heatmap-placeholder,
+.chart-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  text-align: center;
+  padding: 2rem;
+}
+
+.heatmap-placeholder p,
+.chart-error p {
+  margin: 0.5rem 0;
+}
+
+/* Fullscreen Styles */
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.fullscreen-chart {
+  background: white;
+  border-radius: 8px;
+  width: 95vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.fullscreen-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.close-fullscreen {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-fullscreen:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.fullscreen-content {
+  flex: 1;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.fullscreen-content canvas {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Chart Type Specific Styles */
+.chart-container[data-chart-type=\"pie\"] .chart-content,
+.chart-container[data-chart-type=\"doughnut\"] .chart-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chart-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .chart-controls {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .chart-toggles {
+    flex: 1;
+    justify-content: flex-start;
+  }
+  
+  .toggle-button,
+  .dropdown-toggle,
+  .fullscreen-button {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .chart-title {
+    font-size: 1rem;
+  }
+  
+  .chart-description {
+    font-size: 0.8rem;
+  }
+  
+  .fullscreen-chart {
+    width: 98vw;
+    height: 95vh;
+  }
+  
+  .fullscreen-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .fullscreen-header h2 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-container {
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .chart-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .chart-content {
+    padding: 0.75rem;
+  }
+  
+  .dropdown-menu {
+    position: fixed;
+    top: auto;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    min-width: auto;
+  }
+}
+
+/* Animation for chart transitions */
+.chart-content {
+  transition: all 0.3s ease;
+}
+
+.chart-container.loading .chart-content {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.chart-container.loading .chart-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .chart-container {
+    border: 2px solid #000;
+  }
+  
+  .chart-header {
+    border-bottom: 2px solid #000;
+  }
+  
+  .toggle-button,
+  .dropdown-toggle,
+  .fullscreen-button {
+    border: 2px solid #000;
+  }
+  
+  .toggle-button.active {
+    background: #000;
+    color: #fff;
+  }
+}
+
+/* Print styles */
+@media print {
+  .chart-controls {
+    display: none;
+  }
+  
+  .chart-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .fullscreen-overlay {
+    display: none;
+  }
+}", "original_text": "", "replace_all": false}]

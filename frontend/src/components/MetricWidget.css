@@ -1,0 +1,133 @@
+.metric-widget .widget-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  gap: 1rem;
+}
+
+.metric-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.metric-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #333;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-change {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metric-change-value {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.metric-change-icon {
+  font-size: 1rem;
+}
+
+.metric-change-period {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+/* Small widget adjustments */
+.metric-widget.widget-small .metric-value {
+  font-size: 2rem;
+}
+
+.metric-widget.widget-small .metric-icon {
+  font-size: 2rem;
+}
+
+.metric-widget.widget-small .metric-content {
+  gap: 0.75rem;
+}
+
+/* Large widget adjustments */
+.metric-widget.widget-large .metric-value {
+  font-size: 3rem;
+}
+
+.metric-widget.widget-large .metric-icon {
+  font-size: 3rem;
+}
+
+.metric-widget.widget-xlarge .metric-value {
+  font-size: 3.5rem;
+}
+
+.metric-widget.widget-xlarge .metric-icon {
+  font-size: 3.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metric-widget .widget-content {
+    padding: 1rem;
+  }
+  
+  .metric-value {
+    font-size: 2rem;
+  }
+  
+  .metric-icon {
+    font-size: 2rem;
+  }
+  
+  .metric-label {
+    font-size: 0.8rem;
+  }
+  
+  .metric-change-value {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-value {
+    font-size: 1.75rem;
+  }
+  
+  .metric-icon {
+    font-size: 1.75rem;
+  }
+  
+  .metric-content {
+    gap: 0.5rem;
+  }
+}", "original_text": "", "replace_all": false}]

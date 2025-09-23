@@ -1,0 +1,230 @@
+.chart-widget .widget-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chart-widget-chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-widget-chart .chart-container {
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  height: 100%;
+}
+
+.chart-widget-chart .chart-content {
+  flex: 1;
+  padding: 0.75rem;
+}
+
+.chart-widget-loading,
+.chart-widget-error,
+.chart-widget-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.chart-widget-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.chart-widget-loading p {
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.chart-widget-error {
+  color: #dc3545;
+}
+
+.chart-widget-error .error-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.chart-widget-error h4 {
+  margin: 0 0 0.5rem 0;
+  color: #dc3545;
+  font-size: 1rem;
+}
+
+.chart-widget-error p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.chart-widget-empty .empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.chart-widget-empty h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.chart-widget-empty p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.retry-button,
+.configure-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #007bff;
+  background: white;
+  color: #007bff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.retry-button:hover,
+.configure-button:hover {
+  background: #007bff;
+  color: white;
+}
+
+.retry-button {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.retry-button:hover {
+  background: #dc3545;
+}
+
+/* Small widget adjustments */
+.chart-widget.widget-small .chart-widget-loading,
+.chart-widget.widget-small .chart-widget-error,
+.chart-widget.widget-small .chart-widget-empty {
+  padding: 1rem;
+}
+
+.chart-widget.widget-small .error-icon,
+.chart-widget.widget-small .empty-icon {
+  font-size: 2rem;
+}
+
+.chart-widget.widget-small h4 {
+  font-size: 0.9rem;
+}
+
+.chart-widget.widget-small p {
+  font-size: 0.8rem;
+}
+
+/* Large widget adjustments */
+.chart-widget.widget-large .error-icon,
+.chart-widget.widget-large .empty-icon {
+  font-size: 3rem;
+}
+
+.chart-widget.widget-xlarge .error-icon,
+.chart-widget.widget-xlarge .empty-icon {
+  font-size: 3.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart-widget-loading,
+  .chart-widget-error,
+  .chart-widget-empty {
+    padding: 1.5rem 1rem;
+  }
+  
+  .error-icon,
+  .empty-icon {
+    font-size: 2rem;
+  }
+  
+  .chart-widget-chart .chart-content {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-widget-loading,
+  .chart-widget-error,
+  .chart-widget-empty {
+    padding: 1rem 0.75rem;
+  }
+  
+  .error-icon,
+  .empty-icon {
+    font-size: 1.75rem;
+  }
+  
+  .retry-button,
+  .configure-button {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .chart-widget-loading,
+  .chart-widget-error {
+    display: none;
+  }
+  
+  .chart-widget .widget-content {
+    overflow: visible;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .retry-button,
+  .configure-button {
+    border: 2px solid;
+  }
+  
+  .chart-widget-error {
+    border: 2px solid #dc3545;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .chart-widget-loading .loading-spinner {
+    animation: none;
+  }
+  
+  .retry-button,
+  .configure-button {
+    transition: none;
+  }
+}", "original_text": "", "replace_all": false}]
