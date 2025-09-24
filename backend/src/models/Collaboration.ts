@@ -30,8 +30,10 @@ export interface IAnnotation {
   userId: mongoose.Types.ObjectId;
   chartId: string;
   position: {
-    x: number;
-    y: number;
+    x?: number;
+    y?: number;
+    row?: number;
+    column?: string | number;
     width?: number;
     height?: number;
   };
@@ -196,16 +198,24 @@ const annotationSchema = new Schema<IAnnotation>({
     maxlength: [100, 'Chart ID cannot exceed 100 characters']
   },
   position: {
+    // Chart-style coordinates
     x: {
       type: Number,
-      required: true,
       min: [0, 'X position cannot be negative']
     },
     y: {
       type: Number,
-      required: true,
       min: [0, 'Y position cannot be negative']
     },
+    // Table-style coordinates
+    row: {
+      type: Number,
+      min: [0, 'Row cannot be negative']
+    },
+    column: {
+      type: Schema.Types.Mixed // Can be string or number
+    },
+    // Optional dimensions
     width: {
       type: Number,
       min: [0, 'Width cannot be negative']
@@ -498,7 +508,7 @@ collaborationSchema.statics.findExpired = function() {
   });
 };
 
-// Pre-save middleware to clean up expired collaborations
+// Pre-save middleware to clean up expired collaborations and validate annotation positions
 collaborationSchema.pre('save', function(next) {
   if (this.settings.expiresAt && this.settings.expiresAt < new Date()) {
     // Mark as inactive or handle expiration logic
@@ -506,6 +516,18 @@ collaborationSchema.pre('save', function(next) {
     this.settings.allowAnnotations = false;
     this.settings.allowEditing = false;
   }
+  
+  // Validate annotation positions
+  for (const annotation of this.annotations) {
+    const pos = annotation.position;
+    const hasXY = (pos.x !== undefined && pos.x !== null) && (pos.y !== undefined && pos.y !== null);
+    const hasRowColumn = (pos.row !== undefined && pos.row !== null) && (pos.column !== undefined && pos.column !== null);
+    
+    if (!hasXY && !hasRowColumn) {
+      return next(new Error('Annotation position must have either x,y coordinates or row,column coordinates'));
+    }
+  }
+  
   next();
 });
 

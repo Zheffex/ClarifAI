@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../config/logger';
+import { env } from '../config/environment';
 
 export interface CustomError extends Error {
   statusCode?: number;
@@ -53,7 +54,7 @@ export const errorHandler = (
     success: false,
     error: {
       message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+      ...(env.server.isDevelopment && { stack: err.stack }),
     },
   };
 

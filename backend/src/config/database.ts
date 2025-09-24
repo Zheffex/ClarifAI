@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
 import { logger } from './logger';
+import { env } from './environment';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/clarifai';
+    const mongoUri = env.database.uri;
+    
+    logger.info(`Connecting to MongoDB...`);
+    logger.debug(`MongoDB URI (masked): ${mongoUri.replace(/\/\/[^@]*@/, '//***:***@')}`);
+    
     
     await mongoose.connect(mongoUri, {
       // Remove deprecated options - they're now defaults in newer versions

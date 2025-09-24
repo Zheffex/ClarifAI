@@ -6,6 +6,7 @@ import { Dataset } from '../models/Dataset';
 import { AnalysisSession } from '../models/AnalysisSession';
 import { Collaboration } from '../models/Collaboration';
 import { logger } from '../config/logger';
+import { env } from '../config/environment';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -60,7 +61,7 @@ class SocketService {
   constructor(httpServer: HttpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: env.cors.frontendUrl,
         methods: ["GET", "POST"],
         credentials: true
       },
@@ -82,7 +83,7 @@ class SocketService {
           return next(new Error('Authentication token required'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const decoded = jwt.verify(token, env.jwt.secret) as any;
         const user = await User.findById(decoded.id).select('-password');
         
         if (!user) {

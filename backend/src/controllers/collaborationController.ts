@@ -8,10 +8,64 @@ import { IUser } from '../models/User';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
 
+// Get sharing information - return user's collaborations or available resources
+export const getShareInfo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const type = req.query.type as string;
+
+  const skip = (page - 1) * limit;
+
+  let query: any = {
+    $or: [
+      { ownerId: user._id },
+      { 'participants.userId': user._id }
+    ]
+  };
+
+  if (type) {
+    query.resourceType = type;
+  }
+
+  const [collaborations, total] = await Promise.all([
+    Collaboration.find(query)
+      .populate('ownerId', 'firstName lastName email')
+      .populate('resourceId')
+      .sort({ lastModified: -1 })
+      .skip(skip)
+      .limit(limit),
+    Collaboration.countDocuments(query)
+  ]);
+
+  const pages = Math.ceil(total / limit);
+
+  res.json({
+    success: true,
+    data: {
+      collaborations,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages
+      },
+      message: 'Share information retrieved successfully'
+    }
+  });
+});
+
 // Share a resource (dataset, analysis, dashboard)
 export const shareResource = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
-  const { resourceType, resourceId, participants, permissions, settings } = req.body;
+  const { resourceType, resourceId, participants, collaborators, permissions, settings } = req.body;
+  
+  // Support both 'participants' and 'collaborators' field names for flexibility
+  const participantsList = participants || collaborators;
+  
+  if (!participantsList || !Array.isArray(participantsList) || participantsList.length === 0) {
+    throw new AppError('At least one participant is required', 400);
+  }
 
   // Validate resource exists and user has access
   let resource: any;
@@ -37,8 +91,8 @@ export const shareResource = asyncHandler(async (req: Request, res: Response): P
   
   if (collaboration) {
     // Update existing collaboration
-    for (const participant of participants) {
-      await collaboration.addParticipant(participant.userId, participant.permissions || ['read']);
+    for (const participant of participantsList) {
+      await collaboration.addParticipant(participant.userId, participant.permissions || participant.permission || ['read']);
     }
   } else {
     // Create new collaboration
@@ -46,9 +100,9 @@ export const shareResource = asyncHandler(async (req: Request, res: Response): P
       resourceType,
       resourceId: new mongoose.Types.ObjectId(resourceId),
       ownerId: user._id,
-      participants: participants.map((p: any) => ({
+      participants: participantsList.map((p: any) => ({
         userId: new mongoose.Types.ObjectId(p.userId),
-        permissions: p.permissions || ['read'],
+        permissions: p.permissions || [p.permission] || ['read'],
         joinedAt: new Date(),
         lastActivity: new Date(),
         status: 'active'
@@ -102,14 +156,21 @@ export const getCollaboration = asyncHandler(async (req: Request, res: Response)
     throw new AppError('Access denied', 403);
   }
 
-  // Check if collaboration is still active
-  if (!collaboration.isActive()) {
-    throw new AppError('Collaboration has expired', 410);
+  // Check if collaboration is still active (allow read-only access to expired collaborations)
+  const isActive = collaboration.isActive();
+  if (!isActive) {
+    // Add expiration status to response for expired collaborations
+    collaboration.settings.allowComments = false;
+    collaboration.settings.allowAnnotations = false;
+    collaboration.settings.allowEditing = false;
   }
 
   res.json({
     success: true,
-    data: { collaboration }
+    data: { 
+      collaboration,
+      isExpired: !isActive 
+    }
   });
 });
 
@@ -552,16 +613,34 @@ export const validateShareResource = [
   body('resourceId')
     .isMongoId()
     .withMessage('Valid resource ID is required'),
-  body('participants')
-    .isArray({ min: 1 })
-    .withMessage('At least one participant is required'),
-  body('participants.*.userId')
+  // Accept either 'participants' or 'collaborators' field
+  body()
+    .custom((value, { req }) => {
+      const participants = req.body.participants;
+      const collaborators = req.body.collaborators;
+      const list = participants || collaborators;
+      
+      if (!list || !Array.isArray(list) || list.length === 0) {
+        throw new Error('At least one participant is required');
+      }
+      return true;
+    }),
+  body(['participants.*.userId', 'collaborators.*.userId'])
+    .optional()
     .isMongoId()
     .withMessage('Valid participant user ID is required'),
-  body('participants.*.permissions')
+  body(['participants.*.permissions', 'collaborators.*.permissions', 'collaborators.*.permission'])
     .optional()
-    .isArray()
-    .withMessage('Permissions must be an array')
+    .custom((value) => {
+      if (typeof value === 'string') {
+        return true; // Single permission as string
+      }
+      if (Array.isArray(value)) {
+        return true; // Multiple permissions as array
+      }
+      return false;
+    })
+    .withMessage('Permissions must be a string or an array')
 ];
 
 export const validateAddComment = [
@@ -585,12 +664,45 @@ export const validateAddAnnotation = [
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage('Chart ID is required and cannot exceed 100 characters'),
-  body('position.x')
-    .isNumeric()
-    .withMessage('X position must be a number'),
-  body('position.y')
-    .isNumeric()
-    .withMessage('Y position must be a number'),
+  // Support both chart coordinates (x,y) and table coordinates (row,column)
+  body('position')
+    .custom((position) => {
+      if (!position || typeof position !== 'object') {
+        throw new Error('Position object is required');
+      }
+      
+      // Check if it's chart-style coordinates (x, y)
+      const hasXY = position.hasOwnProperty('x') && position.hasOwnProperty('y');
+      // Check if it's table-style coordinates (row, column)
+      const hasRowColumn = position.hasOwnProperty('row') && position.hasOwnProperty('column');
+      
+      if (!hasXY && !hasRowColumn) {
+        throw new Error('Position must have either x,y coordinates or row,column coordinates');
+      }
+      
+      if (hasXY) {
+        if (typeof position.x !== 'number' || typeof position.y !== 'number') {
+          throw new Error('X and Y coordinates must be numbers');
+        }
+        if (position.x < 0 || position.y < 0) {
+          throw new Error('X and Y coordinates cannot be negative');
+        }
+      }
+      
+      if (hasRowColumn) {
+        if (typeof position.row !== 'number') {
+          throw new Error('Row must be a number');
+        }
+        if (typeof position.column !== 'string' && typeof position.column !== 'number') {
+          throw new Error('Column must be a string or number');
+        }
+        if (position.row < 0) {
+          throw new Error('Row cannot be negative');
+        }
+      }
+      
+      return true;
+    }),
   body('content')
     .trim()
     .isLength({ min: 1, max: 1000 })

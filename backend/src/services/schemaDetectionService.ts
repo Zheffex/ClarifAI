@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
 import { GridFSBucket } from 'mongodb';
+import mongoose from 'mongoose';
 
 export interface FieldSchema {
   name: string;
@@ -51,6 +51,24 @@ export class SchemaDetectionService {
   }
 
   /**
+   * Get sample data from a large dataset
+   */
+  private getSampleData(data: any[], sampleSize: number): any[] {
+    if (data.length <= sampleSize) {
+      return data;
+    }
+    
+    const step = Math.floor(data.length / sampleSize);
+    const samples: any[] = [];
+    
+    for (let i = 0; i < sampleSize && i * step < data.length; i++) {
+      samples.push(data[i * step]);
+    }
+    
+    return samples;
+  }
+
+  /**
    * Analyze data and detect schema
    */
   async detectSchema(data: any[]): Promise<DatasetSchema> {
@@ -58,13 +76,20 @@ export class SchemaDetectionService {
       throw new Error('No data provided for schema detection');
     }
 
-    const fields = await this.analyzeFields(data);
-    const relationships = await this.detectRelationships(data, fields);
-    const quality = await this.assessDataQuality(data, fields);
+    // For large datasets, sample the data to improve performance
+    const sampleSize = Math.min(data.length, 1000); // Limit to 1000 rows for analysis
+    const sampleData = data.length > sampleSize ? 
+      this.getSampleData(data, sampleSize) : data;
+    
+    console.log(`Analyzing ${sampleData.length} rows out of ${data.length} total rows`);
+
+    const fields = await this.analyzeFields(sampleData);
+    const relationships = await this.detectRelationships(sampleData, fields);
+    const quality = await this.assessDataQuality(sampleData, fields);
     const recommendations = this.generateRecommendations(fields, quality);
 
     return {
-      totalRows: data.length,
+      totalRows: data.length, // Use actual total, not sample
       totalColumns: fields.length,
       fields,
       relationships: relationships || [],

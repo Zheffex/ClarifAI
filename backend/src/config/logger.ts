@@ -1,4 +1,5 @@
 import winston from 'winston';
+import { env } from './environment';
 
 // Define log levels
 const levels = {
@@ -45,7 +46,7 @@ const transports = [
 
 // Create the logger
 export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
+  level: env.server.isProduction ? 'warn' : 'debug',
   levels,
   format,
   transports,

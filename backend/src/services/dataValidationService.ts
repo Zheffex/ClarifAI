@@ -1,4 +1,4 @@
-import { FieldSchema, DatasetSchema } from './schemaDetectionService';
+import { DatasetSchema, FieldSchema } from './schemaDetectionService';
 
 export interface ValidationRule {
   field: string;

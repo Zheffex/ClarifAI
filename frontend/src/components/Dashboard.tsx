@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { WidgetConfig, WidgetSize } from './Widget';
 import MetricWidget from './MetricWidget';
 import ChartWidget from './ChartWidget';
+import { dashboardService } from '../services/dashboardService';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -129,84 +130,144 @@ const Dashboard: React.FC<DashboardProps> = ({
     setIsEditing(false);
   };
 
-  const addSampleWidgets = () => {
-    const sampleWidgets: WidgetConfig[] = [
-      {
-        id: `widget-${Date.now()}-1`,
-        type: 'metric',
-        title: 'Total Datasets',
-        size: 'small',
-        position: { x: 0, y: 0 },
-        data: {
-          value: 142,
-          label: 'Datasets',
-          change: {
-            value: 12.5,
-            type: 'increase',
-            period: 'last month'
-          },
-          icon: '📊',
-          color: '#007bff'
+  const addSampleWidgets = async () => {
+    try {
+      // Fetch real dashboard stats
+      const stats = await dashboardService.getStats();
+      
+      const sampleWidgets: WidgetConfig[] = [
+        {
+          id: `widget-${Date.now()}-1`,
+          type: 'metric',
+          title: 'Total Datasets',
+          size: 'small',
+          position: { x: 0, y: 0 },
+          data: {
+            value: stats.totalDatasets,
+            label: 'Datasets',
+            change: stats.totalDatasets > 0 ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'current'
+            } : undefined,
+            icon: '📁',
+            color: '#007bff'
+          }
+        },
+        {
+          id: `widget-${Date.now()}-2`,
+          type: 'metric',
+          title: 'Analysis Sessions',
+          size: 'small',
+          position: { x: 1, y: 0 },
+          data: {
+            value: stats.totalAnalyses,
+            label: 'Sessions',
+            change: stats.totalAnalyses > 0 ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'current'
+            } : undefined,
+            icon: '🔍',
+            color: '#28a745'
+          }
+        },
+        {
+          id: `widget-${Date.now()}-3`,
+          type: 'metric',
+          title: 'Data Quality Score',
+          size: 'small',
+          position: { x: 2, y: 0 },
+          data: {
+            value: stats.dataQualityScore || 0,
+            label: 'Quality Score',
+            format: 'percentage',
+            change: stats.dataQualityScore ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'current'
+            } : undefined,
+            icon: '✅',
+            color: '#17a2b8'
+          }
+        },
+        {
+          id: `widget-${Date.now()}-4`,
+          type: 'metric',
+          title: 'Storage Used',
+          size: 'small',
+          position: { x: 3, y: 0 },
+          data: {
+            value: stats.storageUsed || '0 Bytes',
+            label: 'Storage',
+            change: stats.storageUsed ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'current'
+            } : undefined,
+            icon: '💾',
+            color: '#ffc107'
+          }
+        },
+        {
+          id: `widget-${Date.now()}-5`,
+          type: 'metric',
+          title: 'Recent Activity',
+          size: 'small',
+          position: { x: 0, y: 1 },
+          data: {
+            value: stats.recentActivity,
+            label: 'Activities (30d)',
+            change: stats.recentActivity > 0 ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'last 30 days'
+            } : undefined,
+            icon: '⚡',
+            color: '#6f42c1'
+          }
+        },
+        {
+          id: `widget-${Date.now()}-6`,
+          type: 'metric',
+          title: 'Collaborations',
+          size: 'small',
+          position: { x: 1, y: 1 },
+          data: {
+            value: stats.collaborations,
+            label: 'Collaborations',
+            change: stats.collaborations > 0 ? {
+              value: 0,
+              type: 'neutral' as const,
+              period: 'current'
+            } : undefined,
+            icon: '🤝',
+            color: '#e83e8c'
+          }
         }
-      },
-      {
-        id: `widget-${Date.now()}-2`,
-        type: 'metric',
-        title: 'Analysis Sessions',
-        size: 'small',
-        position: { x: 1, y: 0 },
-        data: {
-          value: 1247,
-          label: 'Sessions',
-          change: {
-            value: -3.2,
-            type: 'decrease',
-            period: 'last week'
-          },
-          icon: '🔍',
-          color: '#28a745'
-        }
-      },
-      {
-        id: `widget-${Date.now()}-3`,
-        type: 'metric',
-        title: 'Data Quality Score',
-        size: 'small',
-        position: { x: 2, y: 0 },
-        data: {
-          value: 94.7,
-          label: 'Quality Score',
-          format: 'percentage',
-          change: {
-            value: 2.1,
-            type: 'increase',
-            period: 'last month'
-          },
-          icon: '✅',
-          color: '#17a2b8'
-        }
-      },
-      {
-        id: `widget-${Date.now()}-4`,
-        type: 'metric',
-        title: 'Storage Used',
-        size: 'small',
-        position: { x: 3, y: 0 },
-        data: {
-          value: '2.4 GB',
-          label: 'Storage',
-          change: {
-            value: 8.9,
-            type: 'increase',
-            period: 'last month'
-          },
-          icon: '💾',
-          color: '#ffc107'
-        }
-      }
-    ];
+      ];
 
-    setWidgets(prev => [...prev, ...sampleWidgets]);
+      setWidgets(prev => [...prev, ...sampleWidgets]);
+    } catch (error) {
+      console.error('Failed to load real stats for widgets:', error);
+      // Fallback to default widgets
+      const fallbackWidgets: WidgetConfig[] = [
+        {
+          id: `widget-${Date.now()}-1`,
+          type: 'metric',
+          title: 'Getting Started',
+          size: 'large',
+          position: { x: 0, y: 0 },
+          data: {
+            value: 'Welcome!',
+            label: 'Start by uploading a dataset',
+            icon: '🚀',
+            color: '#007bff'
+          }
+        }
+      ];
+      setWidgets(prev => [...prev, ...fallbackWidgets]);
+    }
   };
 
   const renderWidget = (widget: WidgetConfig) => {
@@ -283,7 +344,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 onClick={addSampleWidgets}
                 className="dashboard-button add"
               >
-                Add Sample Widgets
+                Add Dashboard Widgets
               </button>
               <button
                 onClick={handleCancel}
@@ -313,7 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 onClick={addSampleWidgets}
                 className="dashboard-button add"
               >
-                Add Sample Widgets
+                Add Dashboard Widgets
               </button>
             )}
           </div>

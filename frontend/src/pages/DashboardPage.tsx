@@ -3,19 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDataset } from '../contexts/DatasetContext';
 import { useAnalytics } from '../contexts/AnalyticsContext';
+import { dashboardService, DashboardStats } from '../services/dashboardService';
 import './DashboardPage.css';
-
-interface DashboardStats {
-  totalDatasets: number;
-  totalAnalyses: number;
-  recentActivity: number;
-  collaborations: number;
-}
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { datasets, fetchDatasets } = useDataset();
-  const { sessions } = useAnalytics();
+  const { sessions, fetchSessions } = useAnalytics();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalDatasets: 0,
@@ -28,23 +22,31 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        await fetchDatasets();
-        // Mock stats for now
-        setStats({
-          totalDatasets: datasets.length,
-          totalAnalyses: sessions.length,
-          recentActivity: 12,
-          collaborations: 5
-        });
+        // Fetch real dashboard stats from API
+        const dashboardStats = await dashboardService.getStats();
+        setStats(dashboardStats);
+        
+        // Also fetch datasets and sessions for the lists
+        await Promise.all([
+          fetchDatasets(),
+          fetchSessions()
+        ]);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
+        // Set default stats if API fails
+        setStats({
+          totalDatasets: 0,
+          totalAnalyses: 0,
+          recentActivity: 0,
+          collaborations: 0
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadDashboardData();
-  }, [fetchDatasets, datasets.length, sessions.length]);
+  }, [fetchDatasets, fetchSessions]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -123,6 +125,26 @@ const DashboardPage: React.FC = () => {
             <div className="stat-label">Collaborations</div>
           </div>
         </div>
+        
+        {stats.dataQualityScore !== undefined && (
+          <div className="stat-card">
+            <div className="stat-icon quality">✅</div>
+            <div className="stat-content">
+              <div className="stat-number">{stats.dataQualityScore}%</div>
+              <div className="stat-label">Data Quality</div>
+            </div>
+          </div>
+        )}
+        
+        {stats.storageUsed && (
+          <div className="stat-card">
+            <div className="stat-icon storage">💾</div>
+            <div className="stat-content">
+              <div className="stat-number">{stats.storageUsed}</div>
+              <div className="stat-label">Storage Used</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="dashboard-content">
@@ -133,7 +155,7 @@ const DashboardPage: React.FC = () => {
           </div>
           
           <div className="dataset-list">
-            {datasets.length > 0 ? (
+            {Array.isArray(datasets) && datasets.length > 0 ? (
               datasets.slice(0, 3).map((dataset) => (
                 <div key={dataset._id} className="dataset-item">
                   <div className="dataset-icon">📄</div>
@@ -184,7 +206,7 @@ const DashboardPage: React.FC = () => {
           </div>
           
           <div className="analysis-list">
-            {sessions.length > 0 ? (
+            {Array.isArray(sessions) && sessions.length > 0 ? (
               sessions.slice(0, 3).map((session) => (
                 <div key={session._id} className="analysis-item">
                   <div className="analysis-icon">🔮</div>
@@ -227,24 +249,48 @@ const DashboardPage: React.FC = () => {
         <div className="insights-card">
           <h3>AI Insights</h3>
           <div className="insights-list">
-            <div className="insight-item">
-              <div className="insight-icon">💡</div>
-              <div className="insight-content">
-                <p><strong>Data Quality Check:</strong> Your recent datasets show excellent completeness (97% average).</p>
+            {stats.dataQualityScore !== undefined && (
+              <div className="insight-item">
+                <div className="insight-icon">📊</div>
+                <div className="insight-content">
+                  <p><strong>Data Quality:</strong> Your datasets have an average quality score of {stats.dataQualityScore}%.</p>
+                </div>
               </div>
-            </div>
+            )}
+            
             <div className="insight-item">
               <div className="insight-icon">📈</div>
               <div className="insight-content">
-                <p><strong>Usage Pattern:</strong> You're most active analyzing data on Tuesday and Wednesday.</p>
+                <p><strong>Activity Summary:</strong> You have {stats.recentActivity} recent activities in the last 30 days.</p>
               </div>
             </div>
-            <div className="insight-item">
-              <div className="insight-icon">🎯</div>
-              <div className="insight-content">
-                <p><strong>Recommendation:</strong> Consider setting up automated alerts for your key metrics.</p>
+            
+            {stats.totalDatasets > 0 && stats.totalAnalyses === 0 && (
+              <div className="insight-item">
+                <div className="insight-icon">🎯</div>
+                <div className="insight-content">
+                  <p><strong>Recommendation:</strong> You have datasets ready for analysis. Try creating your first analysis session!</p>
+                </div>
               </div>
-            </div>
+            )}
+            
+            {stats.totalDatasets === 0 && (
+              <div className="insight-item">
+                <div className="insight-icon">🚀</div>
+                <div className="insight-content">
+                  <p><strong>Getting Started:</strong> Upload your first dataset to begin exploring your data with AI-powered analytics.</p>
+                </div>
+              </div>
+            )}
+            
+            {stats.collaborations > 0 && (
+              <div className="insight-item">
+                <div className="insight-icon">👥</div>
+                <div className="insight-content">
+                  <p><strong>Collaboration:</strong> You're collaborating on {stats.collaborations} projects. Great teamwork!</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

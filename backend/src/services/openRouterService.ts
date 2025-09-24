@@ -1,4 +1,5 @@
 import { logger } from '../config/logger';
+import { env } from '../config/environment';
 
 interface OpenRouterMessage {
   role: 'user' | 'assistant' | 'system';
@@ -39,10 +40,10 @@ export class OpenRouterService {
   private baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || '';
-    this.model = process.env.OPENROUTER_MODEL || 'x-ai/grok-4-fast:free';
-    this.siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-    this.siteName = process.env.SITE_NAME || 'ClarifAI';
+    this.apiKey = env.openRouter.apiKey;
+    this.model = env.openRouter.model;
+    this.siteUrl = env.openRouter.siteUrl;
+    this.siteName = env.openRouter.siteName;
 
     if (!this.apiKey) {
       logger.warn('OpenRouter API key not configured');

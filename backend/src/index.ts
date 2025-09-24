@@ -3,11 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
-import dotenv from 'dotenv';
 
 import { connectDatabase } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './config/logger';
+import { env } from './config/environment';
 import SocketService from './services/socketService';
 
 // Import routes
@@ -16,32 +16,46 @@ import datasetRoutes from './routes/datasets';
 import analyticsRoutes from './routes/analytics';
 import collaborationRoutes from './routes/collaboration';
 import aiRoutes from './routes/ai';
+import dashboardRoutes from './routes/dashboard';
 
 // Load environment variables
-dotenv.config();
+logger.info('Loading environment configuration...');
+logger.debug('Environment config loaded:', env.getConfig(false));
 
 const app = express();
 const server = createServer(app);
 let socketService: SocketService;
 
-const PORT = process.env.PORT || 5000;
+const PORT = env.server.port;
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: env.server.isDevelopment ? 1000 : 100, // More lenient in development
   message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: env.cors.frontendUrl,
   credentials: true
 }));
-app.use(limiter);
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Apply rate limiting only to API routes in production
+if (env.server.isProduction) {
+  app.use('/api', limiter);
+} else {
+  // More lenient rate limiting for development
+  app.use('/api', rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 500, // 500 requests per minute in development
+    message: 'Too many requests, please slow down.',
+  }));
+}
+app.use(express.json({ limit: `${Math.floor(env.fileUpload.maxSize / 1024 / 1024)}mb` }));
+app.use(express.urlencoded({ extended: true, limit: `${Math.floor(env.fileUpload.maxSize / 1024 / 1024)}mb` }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -49,13 +63,15 @@ app.use('/api/datasets', datasetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/collaboration', collaborationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: env.server.nodeEnv,
+    version: '1.0.0'
   });
 });
 
@@ -83,9 +99,14 @@ async function startServer() {
     const socketSvc = initializeSocketService();
     
     server.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info('Socket.IO service initialized');
+      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`📊 Environment: ${env.server.nodeEnv}`);
+      logger.info(`🔗 Frontend URL: ${env.cors.frontendUrl}`);
+      logger.info('🔌 Socket.IO service initialized');
+      
+      if (env.server.isDevelopment) {
+        logger.debug('Development mode - additional debugging enabled');
+      }
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

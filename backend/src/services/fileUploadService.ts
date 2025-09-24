@@ -1,9 +1,10 @@
-import mongoose from 'mongoose';
 import { GridFSBucket } from 'mongodb';
+import mongoose from 'mongoose';
 import { Readable } from 'stream';
 import csvParser from 'csv-parser';
 import * as XLSX from 'xlsx';
 import { logger } from '../config/logger';
+import { env } from '../config/environment';
 
 interface FileMetadata {
   originalName: string;
@@ -336,7 +337,7 @@ export class FileUploadService {
   // Validate file
   validateFile(file: Express.Multer.File): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
-    const maxSize = parseInt(process.env.MAX_FILE_SIZE || '52428800'); // 50MB
+    const maxSize = env.fileUpload.maxSize;
     const allowedTypes = ['text/csv', 'application/json', 
                          'application/vnd.ms-excel',
                          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];

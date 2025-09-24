@@ -9,7 +9,9 @@
     "dev": "nodemon src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "validate-env": "node validate-env.js",
+    "setup": "npm install && npm run validate-env"
   },
   "keywords": [],
   "author": "",

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import { AppError } from './errorHandler';
 import { logger } from '../config/logger';
+import { env } from '../config/environment';
 
 // Extend Express Request interface to include user
 declare global {
@@ -35,13 +36,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Verify token
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      logger.error('JWT_SECRET is not configured');
-      throw new AppError('Server configuration error', 500);
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, env.jwt.secret) as JWTPayload;
     
     // Get user from database
     const user = await User.findById(decoded.userId).select('+passwordHash');
@@ -82,15 +77,17 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       : null;
 
     if (token) {
-      const JWT_SECRET = process.env.JWT_SECRET;
-      if (JWT_SECRET) {
-        const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      try {
+        const decoded = jwt.verify(token, env.jwt.secret) as JWTPayload;
         const user = await User.findById(decoded.userId);
         
         if (user && user.isActive) {
           req.user = user;
           req.userId = user._id.toString();
         }
+      } catch (error) {
+        // For optional auth, we silently ignore token errors
+        logger.debug('Optional auth token verification failed:', error);
       }
     }
 
@@ -103,30 +100,18 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
 // Generate JWT token
 export const generateToken = (user: IUser): string => {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
-
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-
   const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
     userId: user._id.toString(),
     email: user.email,
     role: user.role
   };
 
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRE } as jwt.SignOptions);
+  return jwt.sign(payload, env.jwt.secret, { expiresIn: env.jwt.expiresIn } as jwt.SignOptions);
 };
 
 // Verify token utility function
 export const verifyToken = (token: string): JWTPayload => {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-
-  return jwt.verify(token, JWT_SECRET) as JWTPayload;
+  return jwt.verify(token, env.jwt.secret) as JWTPayload;
 };
 
 // Extract token from request

@@ -346,7 +346,7 @@ const DatasetsMainPage: React.FC = () => {
     }
   };
 
-  const filteredAndSortedDatasets = datasets
+  const filteredAndSortedDatasets = (Array.isArray(datasets) ? datasets : [])
     .filter(dataset => {
       const matchesSearch = dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (dataset.description || '').toLowerCase().includes(searchTerm.toLowerCase());

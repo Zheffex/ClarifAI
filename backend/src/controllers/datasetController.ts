@@ -15,11 +15,27 @@ const dataValidationService = new DataValidationService();
 // Upload dataset
 export const uploadDataset = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
-  const { name, description, tags } = req.body;
+  const { name, description } = req.body;
+  let { tags } = req.body;
   const file = req.file;
 
   if (!file) {
     throw new AppError('No file uploaded', 400);
+  }
+
+  // Parse tags if they come as JSON string from form data
+  if (typeof tags === 'string') {
+    try {
+      tags = JSON.parse(tags);
+    } catch {
+      // If parsing fails, treat as single tag
+      tags = [tags];
+    }
+  }
+  
+  // Ensure tags is an array
+  if (!Array.isArray(tags)) {
+    tags = tags ? [tags] : [];
   }
 
   // Validate file
@@ -28,7 +44,10 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
     throw new AppError(validation.errors.join('. '), 400);
   }
 
+  logger.info(`Starting upload process for file: ${file.originalname}`);
+
   try {
+    logger.info('Step 1: Uploading file to GridFS...');
     // Upload file to GridFS
     const fileId = await fileUploadService.uploadFile(
       file.buffer,
@@ -41,22 +60,31 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
         uploadedAt: new Date()
       }
     );
+    logger.info(`File uploaded with ID: ${fileId}`);
 
+    logger.info('Step 2: Parsing file content...');
     // Parse file to get schema information and data
     const parsedData = await fileUploadService.parseFile(
       file.buffer,
       file.mimetype,
       file.originalname
     );
+    logger.info(`File parsed. Rows: ${parsedData.rows?.length || 0}`);
 
+    logger.info('Step 3: Detecting schema...');
     // Detect schema from parsed data
     const detectedSchema = await schemaDetectionService.detectSchema(parsedData.rows);
+    logger.info(`Schema detected. Fields: ${detectedSchema.fields?.length || 0}`);
     
+    logger.info('Step 4: Generating quality report...');
     // Generate data quality report
     const qualityReport = await dataValidationService.generateQualityReport(
       parsedData.rows,
       detectedSchema
     );
+    logger.info(`Quality report generated. Score: ${qualityReport.overall?.score || 'N/A'}`);
+
+    logger.info('Step 5: Creating dataset record...');
 
     // Create dataset record
     const dataset = new Dataset({
@@ -105,6 +133,7 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
     });
 
     await dataset.save();
+    logger.info(`Dataset saved successfully with ID: ${dataset._id}`);
 
     logger.info(`Dataset uploaded by user ${user.email}: ${dataset.name}`);
 
@@ -188,16 +217,51 @@ export const getDatasetById = asyncHandler(async (req: Request, res: Response): 
   const user = req.user as IUser;
   const { id } = req.params;
 
+  logger.info(`Looking for dataset with ID: ${id}`);
+  logger.info(`User requesting access: ${user._id.toString()}`);
+  
+  // Validate ObjectId format
+  if (!id) {
+    throw new AppError('Dataset ID is required', 400);
+  }
+  
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    logger.error(`Invalid ObjectId format: ${id}`);
+    throw new AppError('Invalid dataset ID format', 400);
+  }
+
   const dataset = await Dataset.findById(id)
     .populate('uploadedBy', 'firstName lastName email')
     .populate('accessPermissions.userId', 'firstName lastName email');
+
+  logger.info(`Dataset found: ${!!dataset}`);
 
   if (!dataset) {
     throw new AppError('Dataset not found', 404);
   }
 
-  // Check access permissions
-  if (!dataset.hasUserAccess(user._id.toString())) {
+  // ... existing code ...
+  const userId = user._id.toString();
+  const uploadedBy = dataset.uploadedBy.toString();
+  const isOwner = uploadedBy === userId;
+  const isPublic = dataset.isPublic;
+  const hasExplicitPermission = dataset.accessPermissions.some(
+    (perm: any) => perm.userId.toString() === userId
+  );
+  
+  logger.info(`Access check for dataset ${id}:`, {
+    userId,
+    uploadedBy,
+    isOwner,
+    isPublic,
+    hasExplicitPermission,
+    accessPermissions: dataset.accessPermissions.map((p: any) => ({
+      userId: p.userId.toString(),
+      permission: p.permission
+    }))
+  });
+  
+  if (!dataset.hasUserAccess(userId)) {
     throw new AppError('Access denied', 403);
   }
 
@@ -252,11 +316,8 @@ export const deleteDataset = asyncHandler(async (req: Request, res: Response): P
     throw new AppError('Dataset not found', 404);
   }
 
-  // Check if user has admin access or is the owner
-  if (!dataset.hasUserAccess(user._id.toString(), 'admin') && 
-      dataset.uploadedBy.toString() !== user._id.toString()) {
-    throw new AppError('Insufficient permissions to delete dataset', 403);
-  }
+  // Authorization is already handled in the route middleware
+  // Admin users or dataset owners can delete datasets
 
   await Dataset.findByIdAndDelete(id);
   // TODO: Also delete associated GridFS file when file processing is implemented
@@ -321,7 +382,7 @@ export const getDatasetPreview = asyncHandler(async (req: Request, res: Response
 export const shareDataset = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
   const { id } = req.params;
-  const { userId, permission } = req.body;
+  const { userId, userEmail, permission } = req.body;
 
   const dataset = await Dataset.findById(id);
   if (!dataset) {
@@ -334,9 +395,21 @@ export const shareDataset = asyncHandler(async (req: Request, res: Response): Pr
     throw new AppError('Insufficient permissions to share dataset', 403);
   }
 
-  await dataset.addUserAccess(userId, permission, user._id.toString());
+  let targetUserId = userId;
+  
+  // If userEmail is provided instead of userId, find the user by email
+  if (userEmail && !userId) {
+    const { User } = await import('../models/User');
+    const targetUser = await User.findOne({ email: userEmail });
+    if (!targetUser) {
+      throw new AppError('User not found with the provided email', 404);
+    }
+    targetUserId = targetUser._id.toString();
+  }
 
-  logger.info(`Dataset shared by user ${user.email}: ${dataset.name} with user ${userId}`);
+  await dataset.addUserAccess(targetUserId, permission, user._id.toString());
+
+  logger.info(`Dataset shared by user ${user.email}: ${dataset.name} with user ${targetUserId}`);
 
   res.json({
     success: true,
@@ -545,8 +618,25 @@ export const validateDatasetUpload = [
     .withMessage('Description cannot exceed 1000 characters'),
   body('tags')
     .optional()
-    .isArray()
-    .withMessage('Tags must be an array'),
+    .custom((value) => {
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          if (!Array.isArray(parsed)) {
+            throw new Error('Tags must be an array');
+          }
+          return true;
+        } catch {
+          // If it's not valid JSON, treat as single tag
+          return true;
+        }
+      } else if (Array.isArray(value)) {
+        return true;
+      } else {
+        throw new Error('Tags must be an array or JSON string');
+      }
+    })
+    .withMessage('Tags must be an array or valid JSON array'),
   body('tags.*')
     .optional()
     .trim()
@@ -577,11 +667,23 @@ export const validateDatasetUpdate = [
 
 export const validateDatasetShare = [
   body('userId')
+    .optional()
     .isMongoId()
-    .withMessage('Valid user ID is required'),
+    .withMessage('User ID must be a valid MongoDB ObjectId'),
+  body('userEmail')
+    .optional()
+    .isEmail()
+    .withMessage('User email must be a valid email address'),
   body('permission')
     .isIn(['read', 'write', 'admin'])
-    .withMessage('Permission must be read, write, or admin')
+    .withMessage('Permission must be read, write, or admin'),
+  body()
+    .custom((body) => {
+      if (!body.userId && !body.userEmail) {
+        throw new Error('Either userId or userEmail is required');
+      }
+      return true;
+    })
 ];
 
 export const validatePagination = [

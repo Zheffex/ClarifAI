@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import multer from 'multer';
 import { openRouterService } from '../services/openRouterService';
 import { IUser } from '../models/User';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
@@ -9,6 +10,10 @@ import { logger } from '../config/logger';
 export const chatCompletion = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
   const { messages } = req.body;
+
+  if (!user) {
+    throw new AppError('Authentication required', 401);
+  }
 
   if (!openRouterService.isConfigured()) {
     throw new AppError('AI service is not configured', 503);
@@ -37,6 +42,10 @@ export const chatCompletion = asyncHandler(async (req: Request, res: Response): 
 export const analyzeText = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
   const { text, analysisType } = req.body;
+
+  if (!user) {
+    throw new AppError('Authentication required', 401);
+  }
 
   if (!openRouterService.isConfigured()) {
     throw new AppError('AI service is not configured', 503);
@@ -68,20 +77,71 @@ export const analyzeText = asyncHandler(async (req: Request, res: Response): Pro
   }
 });
 
+// Helper function to get appropriate prompt based on analysis type
+const getImageAnalysisPrompt = (analysisType: string): string => {
+  const prompts = {
+    'classification': 'Classify what you see in this image and provide the main category or type of object/scene.',
+    'description': 'Describe what you see in this image in detail.',
+    'medical': 'Analyze this medical image and describe any notable findings or observations.',
+    'text-extraction': 'Extract and transcribe any text you can see in this image.'
+  };
+  
+  return prompts[analysisType as keyof typeof prompts] || 'Describe what you see in this image';
+};
+
+// Configure multer for image uploads
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+export const uploadImage = imageUpload.single('image');
+
 // Analyze image endpoint
 export const analyzeImage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
-  const { imageUrl, question } = req.body;
+  const { analysisType, prompt } = req.body;
+  const file = req.file;
+
+  if (!user) {
+    throw new AppError('Authentication required', 401);
+  }
 
   if (!openRouterService.isConfigured()) {
     throw new AppError('AI service is not configured', 503);
   }
 
+  // Check if we have either a file upload or imageUrl
+  let imageUrl: string;
+  if (file) {
+    // Convert uploaded file to base64 data URL
+    const base64 = file.buffer.toString('base64');
+    imageUrl = `data:${file.mimetype};base64,${base64}`;
+  } else if (req.body.imageUrl) {
+    imageUrl = req.body.imageUrl;
+  } else {
+    throw new AppError('Either image file or imageUrl is required', 400);
+  }
+
+  const defaultPrompt = getImageAnalysisPrompt(analysisType || 'description');
+  const question = prompt || defaultPrompt;
+
   try {
     const analysis = await openRouterService.analyzeImage(imageUrl, question);
     
     logger.info(`Image analysis requested by user ${user.email}`, {
-      imageUrl,
+      hasFile: !!file,
+      hasUrl: !!req.body.imageUrl,
+      analysisType,
       question
     });
 
@@ -89,8 +149,8 @@ export const analyzeImage = asyncHandler(async (req: Request, res: Response): Pr
       success: true,
       data: { 
         analysis,
-        imageUrl,
-        question: question || 'What is in this image?'
+        analysisType: analysisType || 'classification',
+        question
       },
       message: 'Image analysis completed successfully'
     });
@@ -106,30 +166,98 @@ export const analyzeImage = asyncHandler(async (req: Request, res: Response): Pr
 // Generate data insights endpoint
 export const generateInsights = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
-  const { data, context } = req.body;
+  const { datasetId, analysisType, columns, options } = req.body;
+
+  if (!user) {
+    throw new AppError('Authentication required', 401);
+  }
 
   if (!openRouterService.isConfigured()) {
     throw new AppError('AI service is not configured', 503);
   }
 
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new AppError('Valid data array is required', 400);
+  // Import Dataset model
+  const { Dataset } = await import('../models/Dataset');
+  const { fileUploadService } = await import('../services/fileUploadService');
+
+  // Find and validate dataset
+  const dataset = await Dataset.findById(datasetId);
+  if (!dataset) {
+    throw new AppError('Dataset not found', 404);
+  }
+
+  // Check user access to dataset
+  if (!dataset.hasUserAccess(user._id.toString())) {
+    throw new AppError('Access denied to dataset', 403);
+  }
+
+  // Check if dataset is ready
+  if (dataset.processingStatus !== 'ready') {
+    throw new AppError('Dataset is not ready for analysis', 400);
   }
 
   try {
-    const insights = await openRouterService.generateDataInsights(data, context);
+    // Get dataset preview (limit to reasonable size for insights)
+    const preview = await fileUploadService.getFilePreview(
+      dataset.fileId,
+      1000 // Limit to 1000 rows for performance
+    );
+
+    let dataToAnalyze = preview.rows;
+
+    // Filter columns if specified
+    if (columns && Array.isArray(columns) && columns.length > 0) {
+      dataToAnalyze = preview.rows.map((row: any) => {
+        const filteredRow: any = {};
+        columns.forEach(col => {
+          if (row.hasOwnProperty(col)) {
+            filteredRow[col] = row[col];
+          }
+        });
+        return filteredRow;
+      });
+    }
+
+    // Prepare context for AI analysis
+    const contextString = [
+      `Dataset: ${dataset.name}`,
+      dataset.description ? `Description: ${dataset.description}` : '',
+      `Analysis Type: ${analysisType || 'general'}`,
+      `Total Rows: ${dataset.metadata.rows}`,
+      `Total Columns: ${dataset.metadata.columns}`,
+      `Headers: ${dataset.metadata.headers?.join(', ')}`,
+      `File Type: ${dataset.metadata.type}`,
+      options ? `Options: ${JSON.stringify(options)}` : ''
+    ].filter(Boolean).join('\n');
+
+    const insights = await openRouterService.generateDataInsights(dataToAnalyze, contextString);
     
     logger.info(`Data insights generation requested by user ${user.email}`, {
-      dataRows: data.length,
-      hasContext: !!context
+      datasetId,
+      datasetName: dataset.name,
+      analysisType,
+      dataRows: dataToAnalyze.length,
+      columnsAnalyzed: columns || 'all'
     });
 
     res.json({
       success: true,
       data: { 
         insights,
-        dataRows: data.length,
-        context
+        dataset: {
+          id: dataset._id,
+          name: dataset.name,
+          description: dataset.description
+        },
+        analysisType: analysisType || 'general',
+        dataRows: dataToAnalyze.length,
+        columnsAnalyzed: columns || dataset.metadata.headers,
+        analysisContext: {
+          datasetName: dataset.name,
+          analysisType: analysisType || 'general',
+          totalRows: dataset.metadata.rows,
+          options: options || {}
+        }
       },
       message: 'Data insights generated successfully'
     });
@@ -182,24 +310,55 @@ export const validateTextAnalysis = [
 
 export const validateImageAnalysis = [
   body('imageUrl')
+    .optional()
     .isURL()
-    .withMessage('Valid image URL is required'),
-  body('question')
+    .withMessage('Image URL must be valid if provided'),
+  body('prompt')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Question cannot exceed 500 characters')
+    .withMessage('Prompt cannot exceed 500 characters'),
+  body('analysisType')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Analysis type cannot be empty if provided')
 ];
 
 export const validateDataInsights = [
-  body('data')
-    .isArray({ min: 1, max: 1000 })
-    .withMessage('Data array is required with 1-1000 items'),
-  body('context')
+  body('datasetId')
+    .notEmpty()
+    .isMongoId()
+    .withMessage('Valid dataset ID is required'),
+  body('analysisType')
+    .optional()
+    .isIn(['statistical', 'exploratory', 'predictive', 'pattern-analysis', 'correlation'])
+    .withMessage('Analysis type must be one of: statistical, exploratory, predictive, pattern-analysis, correlation'),
+  body('columns')
+    .optional()
+    .isArray()
+    .withMessage('Columns must be an array'),
+  body('columns.*')
     .optional()
     .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Context cannot exceed 1000 characters')
+    .isLength({ min: 1 })
+    .withMessage('Column names cannot be empty'),
+  body('options')
+    .optional()
+    .isObject()
+    .withMessage('Options must be an object'),
+  body('options.includeCorrelations')
+    .optional()
+    .isBoolean()
+    .withMessage('includeCorrelations must be boolean'),
+  body('options.includeOutliers')
+    .optional()
+    .isBoolean()
+    .withMessage('includeOutliers must be boolean'),
+  body('options.includePatterns')
+    .optional()
+    .isBoolean()
+    .withMessage('includePatterns must be boolean')
 ];
 
 // Validation error handler
@@ -211,4 +370,23 @@ export const handleValidationErrors = (req: Request, res: Response, next: Functi
     return;
   }
   next();
+};
+
+// Handle multer errors
+export const handleMulterError = (error: any, req: Request, res: Response, next: Function): void => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      next(new AppError('File size too large. Maximum size is 10MB', 400));
+      return;
+    }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      next(new AppError('Unexpected file field. Use "image" field name', 400));
+      return;
+    }
+  }
+  if (error.message === 'Only image files are allowed') {
+    next(new AppError(error.message, 400));
+    return;
+  }
+  next(error);
 };

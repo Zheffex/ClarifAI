@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import {
   uploadDataset,
   getDatasets,
@@ -16,8 +17,30 @@ import {
 } from '../controllers/datasetController';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { env } from '../config/environment';
 
 const router = Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: env.fileUpload.maxSize // Use environment config for file size limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['text/csv', 'application/json', 
+                         'application/vnd.ms-excel',
+                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const allowedExtensions = ['csv', 'json', 'xlsx', 'xls'];
+    const extension = file.originalname.split('.').pop()?.toLowerCase();
+    
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(extension || '')) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not supported. Please upload CSV, JSON, or Excel files.'));
+    }
+  }
+});
 
 // All routes require authentication
 router.use(authenticate);
@@ -25,6 +48,7 @@ router.use(authenticate);
 // Upload new dataset
 router.post('/upload',
   requirePermission('datasets:create'),
+  upload.single('file'),
   validateDatasetUpload,
   handleValidationErrors,
   uploadDataset
@@ -54,7 +78,38 @@ router.put('/:id',
 
 // Delete dataset
 router.delete('/:id',
-  requirePermission('datasets:delete'),
+  // Custom authorization: admin users OR dataset owners
+  async (req, res, next) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Admin users can delete any dataset
+      if (user.role === 'admin') {
+        return next();
+      }
+      
+      // For non-admin users, check if they own the dataset
+      const { Dataset } = await import('../models/Dataset');
+      const dataset = await Dataset.findById(req.params.id);
+      
+      if (!dataset) {
+        throw new Error('Dataset not found');
+      }
+      
+      // Check if user is the owner
+      if (dataset.uploadedBy.toString() === user._id.toString()) {
+        return next();
+      }
+      
+      throw new Error('Access denied. You can only delete your own datasets or need admin privileges');
+    } catch (error: any) {
+      const { AppError } = await import('../middleware/errorHandler');
+      next(new AppError(error.message, 403));
+    }
+  },
   deleteDataset
 );
 

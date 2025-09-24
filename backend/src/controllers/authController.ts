@@ -222,25 +222,65 @@ export const changePassword = asyncHandler(async (req: Request, res: Response): 
   });
 });
 
-// Search users by email (for collaboration)
+// Search users by query (for collaboration)
 export const searchUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { email } = req.query;
+  const { q, limit = '10', page = '1' } = req.query;
   
-  if (!email || typeof email !== 'string') {
-    throw new AppError('Email query parameter is required', 400);
+  if (!q || typeof q !== 'string') {
+    throw new AppError('Query parameter "q" is required', 400);
   }
 
-  // Search for users with email containing the query string
-  const users = await User.find({
-    email: { $regex: email, $options: 'i' },
-    isActive: true
-  })
-  .select('firstName lastName email')
-  .limit(10);
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Validate pagination parameters
+  if (pageNum < 1) {
+    throw new AppError('Page must be greater than 0', 400);
+  }
+  if (limitNum < 1 || limitNum > 50) {
+    throw new AppError('Limit must be between 1 and 50', 400);
+  }
+
+  // Search for users with email, firstName, or lastName containing the query string
+  const searchRegex = { $regex: q, $options: 'i' };
+  const searchQuery = {
+    $and: [
+      {
+        $or: [
+          { email: searchRegex },
+          { firstName: searchRegex },
+          { lastName: searchRegex }
+        ]
+      },
+      { isActive: true }
+    ]
+  };
+
+  // Get total count for pagination
+  const totalUsers = await User.countDocuments(searchQuery);
+  const totalPages = Math.ceil(totalUsers / limitNum);
+
+  // Search for users
+  const users = await User.find(searchQuery)
+    .select('firstName lastName email')
+    .skip(skip)
+    .limit(limitNum)
+    .sort({ firstName: 1, lastName: 1 });
 
   res.json({
     success: true,
-    data: { users }
+    data: { 
+      users,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalUsers,
+        totalPages,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1
+      }
+    }
   });
 });
 
