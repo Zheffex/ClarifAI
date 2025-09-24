@@ -49,20 +49,26 @@ export class DataValidationService {
         const validationResults = this.validateFieldValue(value, field, rowIndex);
         
         validationResults.forEach(result => {
+          const fieldSummaryEntry = fieldSummary[field.name];
+          if (!fieldSummaryEntry) return;
+          
           if (result.severity === 'error') {
             errors.push(result);
-            fieldSummary[field.name].errorCount++;
+            fieldSummaryEntry.errorCount++;
           } else if (result.severity === 'warning') {
             warnings.push(result);
-            fieldSummary[field.name].warningCount++;
+            fieldSummaryEntry.warningCount++;
           } else {
-            fieldSummary[field.name].validCount++;
+            fieldSummaryEntry.validCount++;
           }
         });
 
         // If no errors or warnings, count as valid
         if (validationResults.length === 0) {
-          fieldSummary[field.name].validCount++;
+          const fieldSummaryEntry = fieldSummary[field.name];
+          if (fieldSummaryEntry) {
+            fieldSummaryEntry.validCount++;
+          }
         }
       });
     });
@@ -245,15 +251,21 @@ export class DataValidationService {
         const result = this.validateRule(value, rule, rowIndex);
         
         if (result) {
-          if (result.severity === 'error') {
-            errors.push(result);
-            fieldSummary[rule.field].errorCount++;
-          } else if (result.severity === 'warning') {
-            warnings.push(result);
-            fieldSummary[rule.field].warningCount++;
+          const fieldSummaryEntry = fieldSummary[rule.field];
+          if (fieldSummaryEntry) {
+            if (result.severity === 'error') {
+              errors.push(result);
+              fieldSummaryEntry.errorCount++;
+            } else if (result.severity === 'warning') {
+              warnings.push(result);
+              fieldSummaryEntry.warningCount++;
+            }
           }
         } else {
-          fieldSummary[rule.field].validCount++;
+          const fieldSummaryEntry = fieldSummary[rule.field];
+          if (fieldSummaryEntry) {
+            fieldSummaryEntry.validCount++;
+          }
         }
       });
     });
@@ -425,7 +437,7 @@ export class DataValidationService {
       reason: string;
     }> = [];
 
-    cleanedData.forEach((row, rowIndex) => {
+    cleanedData.forEach((row: any, rowIndex: number) => {
       schema.fields.forEach(field => {
         const originalValue = row[field.name];
         let cleanedValue = originalValue;

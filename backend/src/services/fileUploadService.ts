@@ -21,12 +21,19 @@ interface ParsedData {
 }
 
 export class FileUploadService {
-  private gridFSBucket: GridFSBucket;
+  private gridFSBucket?: GridFSBucket;
 
-  constructor() {
-    this.gridFSBucket = new GridFSBucket(mongoose.connection.db, {
-      bucketName: 'datasets'
-    });
+  // Lazy initialization of GridFSBucket
+  private getGridFSBucket(): GridFSBucket {
+    if (!this.gridFSBucket) {
+      if (!mongoose.connection.db) {
+        throw new Error('Database connection not established. Please ensure MongoDB is connected.');
+      }
+      this.gridFSBucket = new GridFSBucket(mongoose.connection.db!, {
+        bucketName: 'datasets'
+      });
+    }
+    return this.gridFSBucket;
   }
 
   // Upload file to GridFS
@@ -36,7 +43,8 @@ export class FileUploadService {
     metadata: FileMetadata
   ): Promise<mongoose.Types.ObjectId> {
     return new Promise((resolve, reject) => {
-      const uploadStream = this.gridFSBucket.openUploadStream(filename, {
+      const gridFSBucket = this.getGridFSBucket();
+      const uploadStream = gridFSBucket.openUploadStream(filename, {
         metadata
       });
 
@@ -62,7 +70,8 @@ export class FileUploadService {
   async downloadFile(fileId: mongoose.Types.ObjectId): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const downloadStream = this.gridFSBucket.openDownloadStream(fileId);
+      const gridFSBucket = this.getGridFSBucket();
+      const downloadStream = gridFSBucket.openDownloadStream(fileId);
 
       downloadStream.on('data', (chunk: Buffer) => {
         chunks.push(chunk);
@@ -83,7 +92,8 @@ export class FileUploadService {
   // Delete file from GridFS
   async deleteFile(fileId: mongoose.Types.ObjectId): Promise<void> {
     try {
-      await this.gridFSBucket.delete(fileId);
+      const gridFSBucket = this.getGridFSBucket();
+      await gridFSBucket.delete(fileId);
       logger.info(`File deleted from GridFS: ${fileId}`);
     } catch (error) {
       logger.error('GridFS delete error:', error);
@@ -94,7 +104,8 @@ export class FileUploadService {
   // Get file metadata
   async getFileInfo(fileId: mongoose.Types.ObjectId): Promise<any> {
     try {
-      const files = await this.gridFSBucket.find({ _id: fileId }).toArray();
+      const gridFSBucket = this.getGridFSBucket();
+      const files = await gridFSBucket.find({ _id: fileId }).toArray();
       return files.length > 0 ? files[0] : null;
     } catch (error) {
       logger.error('GridFS file info error:', error);
@@ -147,8 +158,20 @@ export class FileUploadService {
   private parseExcel(buffer: Buffer): ParsedData {
     try {
       const workbook = XLSX.read(buffer, { type: 'buffer' });
+      
+      if (workbook.SheetNames.length === 0) {
+        throw new Error('Excel file has no sheets');
+      }
+      
       const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        throw new Error('Excel file has no valid sheet names');
+      }
+      
       const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) {
+        throw new Error('Failed to access Excel worksheet');
+      }
       
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       
@@ -256,6 +279,27 @@ export class FileUploadService {
       }
     } catch (error) {
       logger.error('File parsing error:', error);
+      throw error;
+    }
+  }
+
+  // Get full file data
+  async getFullFile(fileId: mongoose.Types.ObjectId): Promise<{ buffer: Buffer; metadata: any; filename: string }> {
+    try {
+      const fileInfo = await this.getFileInfo(fileId);
+      if (!fileInfo) {
+        throw new Error('File not found');
+      }
+
+      const buffer = await this.downloadFile(fileId);
+      
+      return {
+        buffer,
+        metadata: fileInfo.metadata,
+        filename: fileInfo.filename
+      };
+    } catch (error) {
+      logger.error('Get full file error:', error);
       throw error;
     }
   }

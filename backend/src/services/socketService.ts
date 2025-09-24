@@ -52,7 +52,7 @@ class SocketService {
   private io: Server;
   private rooms: Map<string, RoomData> = new Map();
   private userColors: Map<string, string> = new Map();
-  private colorPalette = [
+  private colorPalette: string[] = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
     '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
   ];
@@ -89,13 +89,15 @@ class SocketService {
           return next(new Error('User not found'));
         }
 
-        socket.userId = user._id.toString();
+        const userId = user._id.toString();
+        socket.userId = userId;
         socket.user = user;
         
         // Assign color to user if not already assigned
-        if (socket.userId && !this.userColors.has(socket.userId)) {
+        if (!this.userColors.has(userId)) {
           const colorIndex = this.userColors.size % this.colorPalette.length;
-          this.userColors.set(socket.userId, this.colorPalette[colorIndex]);
+          const selectedColor = this.colorPalette[colorIndex] || '#333333';
+          this.userColors.set(userId, selectedColor);
         }
         
         next();
@@ -155,8 +157,13 @@ class SocketService {
   private async handleJoinRoom(socket: AuthenticatedSocket, data: { roomId: string; resourceType: 'dataset' | 'analysis'; resourceId: string }): Promise<void> {
     const { roomId, resourceType, resourceId } = data;
     
+    if (!socket.userId) {
+      socket.emit('error', { message: 'User not authenticated' });
+      return;
+    }
+    
     // Verify user has access to the resource
-    const hasAccess = await this.verifyResourceAccess(socket.userId!, resourceType, resourceId);
+    const hasAccess = await this.verifyResourceAccess(socket.userId, resourceType, resourceId);
     if (!hasAccess) {
       socket.emit('error', { message: 'Access denied to this resource' });
       return;
@@ -173,18 +180,18 @@ class SocketService {
         type: resourceType,
         resourceId,
         participants: new Set(),
-        owner: owner || socket.userId!,
+        owner: owner || socket.userId,
         permissions: new Map()
       };
       this.rooms.set(roomId, room);
     }
 
     const room = this.rooms.get(roomId)!;
-    room.participants.add(socket.userId!);
+    room.participants.add(socket.userId);
 
     // Get user permissions
-    const permissions = await this.getUserPermissions(socket.userId!, resourceType, resourceId);
-    room.permissions.set(socket.userId!, permissions);
+    const permissions = await this.getUserPermissions(socket.userId, resourceType, resourceId);
+    room.permissions.set(socket.userId, permissions);
 
     // Notify room of new participant
     const joinMessage: ChatMessage = {
@@ -199,7 +206,7 @@ class SocketService {
     socket.to(roomId).emit('user-joined', {
       userId: socket.userId,
       username: socket.user.username,
-      color: this.userColors.get(socket.userId!)
+      color: this.userColors.get(socket.userId) || '#333333'
     });
 
     socket.to(roomId).emit('chat-message', joinMessage);
@@ -209,12 +216,14 @@ class SocketService {
   }
 
   private handleLeaveRoom(socket: AuthenticatedSocket, roomId: string): void {
+    if (!socket.userId) return;
+    
     socket.leave(roomId);
     
     const room = this.rooms.get(roomId);
     if (room) {
-      room.participants.delete(socket.userId!);
-      room.permissions.delete(socket.userId!);
+      room.participants.delete(socket.userId);
+      room.permissions.delete(socket.userId);
 
       // Notify room of participant leaving
       const leaveMessage: ChatMessage = {
@@ -245,11 +254,11 @@ class SocketService {
   private handleChatMessage(socket: AuthenticatedSocket, data: { roomId: string; message: string }): void {
     const { roomId, message } = data;
     
-    if (!message.trim()) return;
+    if (!socket.userId || !message.trim()) return;
 
     const chatMessage: ChatMessage = {
       id: `msg-${Date.now()}-${socket.userId}`,
-      userId: socket.userId!,
+      userId: socket.userId,
       username: socket.user.username,
       message: message.trim(),
       timestamp: new Date(),
@@ -265,12 +274,14 @@ class SocketService {
   private handleCursorMove(socket: AuthenticatedSocket, data: { roomId: string; x: number; y: number }): void {
     const { roomId, x, y } = data;
     
+    if (!socket.userId) return;
+    
     const cursorPosition: CursorPosition = {
-      userId: socket.userId!,
+      userId: socket.userId,
       username: socket.user.username,
       x,
       y,
-      color: this.userColors.get(socket.userId!) || '#333333'
+      color: this.userColors.get(socket.userId) || '#333333'
     };
 
     // Broadcast cursor position to other users in the room
@@ -280,9 +291,11 @@ class SocketService {
   private handleDocumentEdit(socket: AuthenticatedSocket, data: { roomId: string; edit: Omit<DocumentEdit, 'userId' | 'username' | 'timestamp'> }): void {
     const { roomId, edit } = data;
     
+    if (!socket.userId) return;
+    
     const documentEdit: DocumentEdit = {
       ...edit,
-      userId: socket.userId!,
+      userId: socket.userId,
       username: socket.user.username,
       timestamp: new Date()
     };
@@ -409,7 +422,7 @@ class SocketService {
   }
 
   // Public methods for external use
-  public notifyResourceUpdate(resourceId: string, resourceType: 'dataset' | 'analysis', updateData: any): void {
+  public notifyResourceUpdate(resourceId: string, resourceType: 'dataset' | 'analysis' | 'dashboard', updateData: any): void {
     const roomId = `${resourceType}-${resourceId}`;
     this.io.to(roomId).emit('resource-updated', {
       resourceId,
@@ -419,7 +432,7 @@ class SocketService {
     });
   }
 
-  public notifyUserPermissionChange(userId: string, resourceId: string, resourceType: 'dataset' | 'analysis', newPermissions: string[]): void {
+  public notifyUserPermissionChange(userId: string, resourceId: string, resourceType: 'dataset' | 'analysis' | 'dashboard', newPermissions: string[]): void {
     const roomId = `${resourceType}-${resourceId}`;
     const room = this.rooms.get(roomId);
     

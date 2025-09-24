@@ -421,7 +421,7 @@ export const generateInsights = asyncHandler(async (req: Request, res: Response)
     );
 
     // Generate insights based on data analysis
-    const insights = await generateDataInsights(parsedData.data, fields);
+    const insights = await generateDataInsights(parsedData.rows, fields);
 
     res.json({
       success: true,
@@ -524,13 +524,17 @@ function analyzeCorrelations(data: any[], fields: string[]): AIInsight | null {
   
   for (let i = 0; i < fields.length; i++) {
     for (let j = i + 1; j < fields.length; j++) {
-      const corr = calculateCorrelation(data, fields[i], fields[j]);
-      if (Math.abs(corr) > 0.5) {
-        correlations.push({
-          field1: fields[i],
-          field2: fields[j],
-          correlation: corr
-        });
+      const field1 = fields[i];
+      const field2 = fields[j];
+      if (field1 && field2) {
+        const corr = calculateCorrelation(data, field1, field2);
+        if (Math.abs(corr) > 0.5) {
+          correlations.push({
+            field1,
+            field2,
+            correlation: corr
+          });
+        }
       }
     }
   }
@@ -555,17 +559,24 @@ function analyzeCorrelations(data: any[], fields: string[]): AIInsight | null {
 }
 
 function calculateCorrelation(data: any[], field1: string, field2: string): number {
-  const pairs = data.map(row => [Number(row[field1]), Number(row[field2])])
-    .filter(([x, y]) => !isNaN(x) && !isNaN(y));
+  const pairs: number[][] = [];
+  
+  for (const row of data) {
+    const x = Number(row[field1]);
+    const y = Number(row[field2]);
+    if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
+      pairs.push([x, y]);
+    }
+  }
   
   if (pairs.length < 3) return 0;
   
   const n = pairs.length;
-  const sumX = pairs.reduce((sum, [x]) => sum + x, 0);
-  const sumY = pairs.reduce((sum, [, y]) => sum + y, 0);
-  const sumXY = pairs.reduce((sum, [x, y]) => sum + x * y, 0);
-  const sumX2 = pairs.reduce((sum, [x]) => sum + x * x, 0);
-  const sumY2 = pairs.reduce((sum, [, y]) => sum + y * y, 0);
+  const sumX = pairs.reduce((sum, pair) => sum + pair[0]!, 0);
+  const sumY = pairs.reduce((sum, pair) => sum + pair[1]!, 0);
+  const sumXY = pairs.reduce((sum, pair) => sum + pair[0]! * pair[1]!, 0);
+  const sumX2 = pairs.reduce((sum, pair) => sum + pair[0]! * pair[0]!, 0);
+  const sumY2 = pairs.reduce((sum, pair) => sum + pair[1]! * pair[1]!, 0);
   
   const numerator = n * sumXY - sumX * sumY;
   const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
@@ -574,17 +585,17 @@ function calculateCorrelation(data: any[], field1: string, field2: string): numb
 }
 
 function analyzeDistribution(data: any[], field: string): AIInsight | null {
-  const values = data.map(row => Number(row[field])).filter(val => !isNaN(val));
+  const values = data.map(row => Number(row[field])).filter(val => !isNaN(val) && isFinite(val));
   if (values.length < 10) return null;
   
   values.sort((a, b) => a - b);
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const median = values[Math.floor(values.length / 2)];
-  const q1 = values[Math.floor(values.length * 0.25)];
-  const q3 = values[Math.floor(values.length * 0.75)];
+  const median = values[Math.floor(values.length / 2)] || 0;
+  const q1 = values[Math.floor(values.length * 0.25)] || 0;
+  const q3 = values[Math.floor(values.length * 0.75)] || 0;
   
   // Check for skewness
-  const skewness = (mean - median) / (q3 - q1);
+  const skewness = q3 - q1 > 0 ? (mean - median) / (q3 - q1) : 0;
   
   if (Math.abs(skewness) < 0.2) return null;
   

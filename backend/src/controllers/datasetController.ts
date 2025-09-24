@@ -50,11 +50,11 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
     );
 
     // Detect schema from parsed data
-    const detectedSchema = await schemaDetectionService.detectSchema(parsedData.data);
+    const detectedSchema = await schemaDetectionService.detectSchema(parsedData.rows);
     
     // Generate data quality report
     const qualityReport = await dataValidationService.generateQualityReport(
-      parsedData.data,
+      parsedData.rows,
       detectedSchema
     );
 
@@ -294,14 +294,13 @@ export const getDatasetPreview = asyncHandler(async (req: Request, res: Response
     // Get file preview from GridFS
     const preview = await fileUploadService.getFilePreview(
       dataset.fileId,
-      limit,
-      offset
+      limit
     );
 
     res.json({
       success: true,
       data: {
-        rows: preview.data,
+        rows: preview.rows,
         totalCount: dataset.metadata.rows || 0,
         columns: dataset.metadata.headers || [],
         pagination: {
@@ -430,17 +429,17 @@ export const validateDatasetQuality = asyncHandler(async (req: Request, res: Res
     );
 
     // Re-detect schema for validation
-    const currentSchema = await schemaDetectionService.detectSchema(parsedData.data);
+    const currentSchema = await schemaDetectionService.detectSchema(parsedData.rows);
     
     // Generate fresh quality report
     const qualityReport = await dataValidationService.generateQualityReport(
-      parsedData.data,
+      parsedData.rows,
       currentSchema
     );
 
     // Validate data against current schema
     const validation = await dataValidationService.validateData(
-      parsedData.data,
+      parsedData.rows,
       currentSchema
     );
 
@@ -494,11 +493,11 @@ export const cleanDatasetData = asyncHandler(async (req: Request, res: Response)
     );
 
     // Detect current schema
-    const currentSchema = await schemaDetectionService.detectSchema(parsedData.data);
+    const currentSchema = await schemaDetectionService.detectSchema(parsedData.rows);
     
     // Clean the data
     const { cleanedData, changes } = await dataValidationService.cleanData(
-      parsedData.data,
+      parsedData.rows,
       currentSchema
     );
 

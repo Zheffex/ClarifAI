@@ -35,12 +35,19 @@ export interface DatasetSchema {
 }
 
 export class SchemaDetectionService {
-  private gridFSBucket: GridFSBucket;
+  private gridFSBucket?: GridFSBucket;
 
-  constructor() {
-    this.gridFSBucket = new GridFSBucket(mongoose.connection.db!, {
-      bucketName: 'datasets'
-    });
+  // Lazy initialization of GridFSBucket
+  private getGridFSBucket(): GridFSBucket {
+    if (!this.gridFSBucket) {
+      if (!mongoose.connection.db) {
+        throw new Error('Database connection not established. Please ensure MongoDB is connected.');
+      }
+      this.gridFSBucket = new GridFSBucket(mongoose.connection.db!, {
+        bucketName: 'datasets'
+      });
+    }
+    return this.gridFSBucket;
   }
 
   /**
@@ -60,7 +67,7 @@ export class SchemaDetectionService {
       totalRows: data.length,
       totalColumns: fields.length,
       fields,
-      relationships,
+      relationships: relationships || [],
       quality,
       recommendations
     };
@@ -136,10 +143,10 @@ export class SchemaDetectionService {
       type: typeDetection.type,
       nullable,
       unique,
-      pattern,
-      minValue,
-      maxValue,
-      avgValue,
+      ...(pattern && { pattern }),
+      ...(minValue !== undefined && { minValue }),
+      ...(maxValue !== undefined && { maxValue }),
+      ...(avgValue !== undefined && { avgValue }),
       distinctValues,
       sampleValues,
       confidence: typeDetection.confidence
@@ -286,6 +293,8 @@ export class SchemaDetectionService {
         const field1 = fields[i];
         const field2 = fields[j];
 
+        if (!field1 || !field2) continue;
+
         // Skip if different types
         if (field1.type !== field2.type) continue;
 
@@ -344,8 +353,12 @@ export class SchemaDetectionService {
     let sum2Sq = 0;
 
     for (let i = 0; i < nums1.length; i++) {
-      const diff1 = nums1[i] - mean1;
-      const diff2 = nums2[i] - mean2;
+      const val1 = nums1[i];
+      const val2 = nums2[i];
+      if (val1 === undefined || val2 === undefined) continue;
+      
+      const diff1 = val1 - mean1;
+      const diff2 = val2 - mean2;
       numerator += diff1 * diff2;
       sum1Sq += diff1 ** 2;
       sum2Sq += diff2 ** 2;

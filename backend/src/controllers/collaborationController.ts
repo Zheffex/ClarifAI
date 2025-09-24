@@ -146,7 +146,7 @@ export const addComment = asyncHandler(async (req: Request, res: Response): Prom
 
   // Emit real-time update
   if (global.socketService && id) {
-    global.socketService.notifyResourceUpdate(resourceId, resourceType, {
+    global.socketService.notifyResourceUpdate(collaboration.resourceId.toString(), collaboration.resourceType, {
       type: 'comment_added',
       comment,
       user: {
@@ -388,11 +388,15 @@ export const getPublicCollaborations = asyncHandler(async (req: Request, res: Re
 export const getRoomParticipants = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { roomId } = req.params;
   
+  if (!roomId) {
+    throw new AppError('Room ID is required', 400);
+  }
+  
   if (!global.socketService) {
     throw new AppError('Real-time service not available', 503);
   }
 
-  const participants = global.socketService.getRoomParticipants(roomId);
+  const participants = global.socketService.getRoomParticipants(roomId!);
   
   res.json({
     success: true,
@@ -441,11 +445,15 @@ export const updateUserPermissions = asyncHandler(async (req: Request, res: Resp
 export const getCollaborationStatus = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { resourceType, resourceId } = req.params;
   
+  if (!resourceType || !resourceId) {
+    throw new AppError('Resource type and resource ID are required', 400);
+  }
+  
   if (!global.socketService) {
     throw new AppError('Real-time service not available', 503);
   }
 
-  const roomId = `${resourceType}-${resourceId}`;
+  const roomId: string = `${resourceType!}-${resourceId!}`;
   const participants = global.socketService.getRoomParticipants(roomId);
   const activeRooms = global.socketService.getActiveRooms();
   
