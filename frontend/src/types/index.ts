@@ -188,6 +188,10 @@ export interface AnalyticsContextType {
   createSession: (datasetId: string, title: string) => Promise<AnalysisSession>;
   sendQuery: (sessionId: string, query: string) => Promise<any>;
   generatePrediction: (datasetId: string, config: any) => Promise<Prediction>;
+  fetchSession: (sessionId: string) => Promise<AnalysisSession>;
+  updateSession: (sessionId: string, updates: Partial<AnalysisSession>) => Promise<void>;
+  fetchSessions: () => Promise<void>;
+  deleteSession: (sessionId: string) => Promise<void>;
 }
 
 export interface NotificationContextType {

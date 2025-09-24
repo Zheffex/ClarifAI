@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import './Layout.css';
@@ -10,9 +11,14 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const { notifications, removeNotification } = useNotification();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   return (
@@ -21,10 +27,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="header-left">
           <h1 className="logo">ClarifAI</h1>
           <nav className="main-nav">
-            <a href="/dashboard" className="nav-link">Dashboard</a>
-            <a href="/datasets" className="nav-link">Datasets</a>
-            <a href="/analytics" className="nav-link">Analytics</a>
-            <a href="/collaboration" className="nav-link">Collaboration</a>
+            <Link 
+              to="/dashboard" 
+              className={`nav-link ${isActive('/dashboard') || location.pathname === '/' ? 'active' : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/datasets" 
+              className={`nav-link ${isActive('/datasets') ? 'active' : ''}`}
+            >
+              Datasets
+            </Link>
+            <Link 
+              to="/analytics" 
+              className={`nav-link ${isActive('/analytics') ? 'active' : ''}`}
+            >
+              Analytics
+            </Link>
+            <Link 
+              to="/collaboration" 
+              className={`nav-link ${isActive('/collaboration') ? 'active' : ''}`}
+            >
+              Collaboration
+            </Link>
           </nav>
         </div>
         
@@ -44,9 +70,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="sidebar-section">
             <h3>Quick Actions</h3>
             <ul className="sidebar-menu">
-              <li><a href="/datasets/upload">Upload Dataset</a></li>
-              <li><a href="/analytics/new">New Analysis</a></li>
-              <li><a href="/collaboration/shared">Shared Resources</a></li>
+              <li>
+                <Link to="/datasets" className="sidebar-link">
+                  <span className="sidebar-icon">📁</span>
+                  Upload Dataset
+                </Link>
+              </li>
+              <li>
+                <Link to="/analytics/new" className="sidebar-link">
+                  <span className="sidebar-icon">📊</span>
+                  New Analysis
+                </Link>
+              </li>
+              <li>
+                <Link to="/collaboration/share" className="sidebar-link">
+                  <span className="sidebar-icon">🔗</span>
+                  Share Resource
+                </Link>
+              </li>
             </ul>
           </div>
           
@@ -58,6 +99,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="activity-text">
                   <div className="activity-title">Dataset Analysis</div>
                   <div className="activity-time">2 hours ago</div>
+                </div>
+              </div>
+              <div className="activity-item">
+                <div className="activity-icon">📄</div>
+                <div className="activity-text">
+                  <div className="activity-title">Data Upload</div>
+                  <div className="activity-time">4 hours ago</div>
+                </div>
+              </div>
+              <div className="activity-item">
+                <div className="activity-icon">🔗</div>
+                <div className="activity-text">
+                  <div className="activity-title">Resource Shared</div>
+                  <div className="activity-time">1 day ago</div>
                 </div>
               </div>
             </div>

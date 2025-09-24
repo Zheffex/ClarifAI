@@ -115,19 +115,6 @@ const LoginPage: React.FC = () => {
           </div>
         </form>
       </div>
-
-      <div className="auth-info">
-        <div className="info-card">
-          <h3>Intelligent Analytics Platform</h3>
-          <ul>
-            <li>🤖 AI-powered natural language queries</li>
-            <li>📊 Automated data visualization</li>
-            <li>🔮 Predictive analytics and forecasting</li>
-            <li>🤝 Real-time collaboration features</li>
-            <li>🔒 Enterprise-grade security</li>
-          </ul>
-        </div>
-      </div>
     </div>
   );
 };

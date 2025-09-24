@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDataset } from '../contexts/DatasetContext';
 import { useAnalytics } from '../contexts/AnalyticsContext';
@@ -15,6 +16,7 @@ const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { datasets, fetchDatasets } = useDataset();
   const { sessions } = useAnalytics();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalDatasets: 0,
     totalAnalyses: 0,
@@ -72,11 +74,17 @@ const DashboardPage: React.FC = () => {
         </div>
         
         <div className="quick-actions">
-          <button className="action-btn primary">
+          <button 
+            className="action-btn primary"
+            onClick={() => navigate('/analytics/new')}
+          >
             <span className="btn-icon">📈</span>
             New Analysis
           </button>
-          <button className="action-btn secondary">
+          <button 
+            className="action-btn secondary"
+            onClick={() => navigate('/datasets')}
+          >
             <span className="btn-icon">📊</span>
             Upload Dataset
           </button>
@@ -121,7 +129,7 @@ const DashboardPage: React.FC = () => {
         <div className="content-section">
           <div className="section-header">
             <h2>Recent Datasets</h2>
-            <a href="/datasets" className="section-link">View All</a>
+            <Link to="/datasets" className="section-link">View All</Link>
           </div>
           
           <div className="dataset-list">
@@ -144,7 +152,12 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="dataset-actions">
-                    <button className="action-btn small">Analyze</button>
+                    <button 
+                      className="action-btn small"
+                      onClick={() => navigate(`/analytics/new?dataset=${dataset._id}`)}
+                    >
+                      Analyze
+                    </button>
                   </div>
                 </div>
               ))
@@ -153,7 +166,12 @@ const DashboardPage: React.FC = () => {
                 <div className="empty-icon">📁</div>
                 <h3>No datasets yet</h3>
                 <p>Upload your first dataset to get started with AI-powered analytics.</p>
-                <button className="action-btn primary">Upload Dataset</button>
+                <button 
+                  className="action-btn primary"
+                  onClick={() => navigate('/datasets')}
+                >
+                  Upload Dataset
+                </button>
               </div>
             )}
           </div>
@@ -162,7 +180,7 @@ const DashboardPage: React.FC = () => {
         <div className="content-section">
           <div className="section-header">
             <h2>Recent Analysis Sessions</h2>
-            <a href="/analytics" className="section-link">View All</a>
+            <Link to="/analytics" className="section-link">View All</Link>
           </div>
           
           <div className="analysis-list">
@@ -179,7 +197,12 @@ const DashboardPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="analysis-actions">
-                    <button className="action-btn small">Continue</button>
+                    <button 
+                      className="action-btn small"
+                      onClick={() => navigate(`/analytics/session/${session._id}`)}
+                    >
+                      Continue
+                    </button>
                   </div>
                 </div>
               ))
@@ -188,7 +211,12 @@ const DashboardPage: React.FC = () => {
                 <div className="empty-icon">🔍</div>
                 <h3>No analyses yet</h3>
                 <p>Start your first analysis session to explore your data with AI.</p>
-                <button className="action-btn primary">New Analysis</button>
+                <button 
+                  className="action-btn primary"
+                  onClick={() => navigate('/analytics/new')}
+                >
+                  New Analysis
+                </button>
               </div>
             )}
           </div>

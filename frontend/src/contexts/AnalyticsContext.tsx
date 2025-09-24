@@ -21,6 +21,22 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     throw new Error('Generate prediction not yet implemented');
   };
 
+  const fetchSession = async (sessionId: string): Promise<AnalysisSession> => {
+    throw new Error('Fetch session not yet implemented');
+  };
+
+  const updateSession = async (sessionId: string, updates: Partial<AnalysisSession>): Promise<void> => {
+    throw new Error('Update session not yet implemented');
+  };
+
+  const fetchSessions = async (): Promise<void> => {
+    throw new Error('Fetch sessions not yet implemented');
+  };
+
+  const deleteSession = async (sessionId: string): Promise<void> => {
+    throw new Error('Delete session not yet implemented');
+  };
+
   const value: AnalyticsContextType = {
     sessions,
     currentSession,
@@ -29,6 +45,10 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     createSession,
     sendQuery,
     generatePrediction,
+    fetchSession,
+    updateSession,
+    fetchSessions,
+    deleteSession,
   };
 
   return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;

@@ -39,11 +39,30 @@
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  font-weight: 500;
 }
 
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
 }
 
 .header-right {
@@ -119,18 +138,44 @@
 }
 
 .sidebar-menu a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.75rem 1rem;
   color: #666;
   text-decoration: none;
   border-radius: 4px;
   transition: all 0.2s;
+  font-size: 0.875rem;
 }
 
 .sidebar-menu a:hover {
   background-color: #f8f9fa;
   color: #667eea;
   transform: translateX(4px);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #666;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.sidebar-link:hover {
+  background-color: #f8f9fa;
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+.sidebar-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .main-content {
