@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NLPService, NLPResponse } from '../services/nlpService';
-import { Dataset } from '../types/api';
+import { Dataset } from '../types';
 import './AIChat.css';
 
 interface ChatMessage {
@@ -35,7 +35,7 @@ const AIChat: React.FC<AIChatProps> = ({
       setMessages([{
         id: 'welcome',
         type: 'ai',
-        content: 'Hi! I\\'m your AI assistant. I can help you analyze data, create visualizations, and answer questions about your datasets. Try asking me something like \"Show me a bar chart of sales by region\" or \"What are the trends in my data?\"',
+        content: 'Hi! I\'m your AI assistant. I can help you analyze data, create visualizations, and answer questions about your datasets. Try asking me something like "Show me a bar chart of sales by region" or "What are the trends in my data?"',
         timestamp: new Date()
       }]);
     }
@@ -80,7 +80,7 @@ const AIChat: React.FC<AIChatProps> = ({
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         type: 'ai',
-        content: 'I\\'m sorry, I encountered an error processing your request. Please try again.',
+        content: 'I\'m sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date()
       };
       
@@ -94,7 +94,7 @@ const AIChat: React.FC<AIChatProps> = ({
     let response = nlpResponse.interpretation;
     
     if (nlpResponse.confidence < 0.6) {
-      response += ' However, I\\'m not entirely sure I understood correctly.';
+      response += ' However, I\'m not entirely sure I understood correctly.';
     }
     
     if (nlpResponse.suggestedActions.length > 0) {
@@ -124,39 +124,39 @@ const AIChat: React.FC<AIChatProps> = ({
   const renderMessage = (message: ChatMessage) => {
     return (
       <div key={message.id} className={`chat-message ${message.type}`}>
-        <div className=\"message-header\">
-          <div className=\"message-avatar\">
+        <div className="message-header">
+          <div className="message-avatar">
             {message.type === 'user' ? '👤' : '🤖'}
           </div>
-          <div className=\"message-info\">
-            <span className=\"message-sender\">
+          <div className="message-info">
+            <span className="message-sender">
               {message.type === 'user' ? 'You' : 'AI Assistant'}
             </span>
-            <span className=\"message-time\">
+            <span className="message-time">
               {formatTimestamp(message.timestamp)}
             </span>
           </div>
         </div>
         
-        <div className=\"message-content\">
+        <div className="message-content">
           <p>{message.content}</p>
           
           {message.response && (
-            <div className=\"message-actions\">
+            <div className="message-actions">
               {message.response.confidence < 0.6 && (
-                <div className=\"confidence-warning\">
-                  ⚠️ I\\'m not very confident about this interpretation (confidence: {Math.round(message.response.confidence * 100)}%)
+                <div className="confidence-warning">
+                  ⚠️ I\'m not very confident about this interpretation (confidence: {Math.round(message.response.confidence * 100)}%)
                 </div>
               )}
               
               {message.response.suggestedActions.length > 0 && (
-                <div className=\"suggested-actions\">
+                <div className="suggested-actions">
                   <h4>Suggested Actions:</h4>
-                  <div className=\"actions-list\">
+                  <div className="actions-list">
                     {message.response.suggestedActions.map((action, index) => (
                       <button
                         key={index}
-                        className=\"action-button\"
+                        className="action-button"
                         onClick={() => handleActionClick(action)}
                       >
                         {getActionIcon(action.type)} {action.description}
@@ -167,13 +167,13 @@ const AIChat: React.FC<AIChatProps> = ({
               )}
               
               {message.response.followUpQuestions && message.response.followUpQuestions.length > 0 && (
-                <div className=\"follow-up-questions\">
+                <div className="follow-up-questions">
                   <h4>Follow-up questions:</h4>
-                  <div className=\"questions-list\">
+                  <div className="questions-list">
                     {message.response.followUpQuestions.map((question, index) => (
                       <button
                         key={index}
-                        className=\"question-button\"
+                        className="question-button"
                         onClick={() => handleSuggestionClick(question)}
                       >
                         {question}
@@ -210,34 +210,34 @@ const AIChat: React.FC<AIChatProps> = ({
 
   return (
     <div className={`ai-chat ${isExpanded ? 'expanded' : 'collapsed'} ${className}`}>
-      <div className=\"chat-header\" onClick={() => setIsExpanded(!isExpanded)}>
-        <div className=\"chat-title\">
-          <span className=\"chat-icon\">🤖</span>
+      <div className="chat-header" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="chat-title">
+          <span className="chat-icon">🤖</span>
           <span>AI Assistant</span>
           {!isExpanded && messages.length > 1 && (
-            <span className=\"message-count\">{messages.length - 1}</span>
+            <span className="message-count">{messages.length - 1}</span>
           )}
         </div>
-        <div className=\"chat-toggle\">
+        <div className="chat-toggle">
           {isExpanded ? '▼' : '▲'}
         </div>
       </div>
       
       {isExpanded && (
-        <div className=\"chat-content\">
-          <div className=\"chat-messages\">
+        <div className="chat-content">
+          <div className="chat-messages">
             {messages.map(renderMessage)}
             
             {isLoading && (
-              <div className=\"chat-message ai loading\">
-                <div className=\"message-header\">
-                  <div className=\"message-avatar\">🤖</div>
-                  <div className=\"message-info\">
-                    <span className=\"message-sender\">AI Assistant</span>
+              <div className="chat-message ai loading">
+                <div className="message-header">
+                  <div className="message-avatar">🤖</div>
+                  <div className="message-info">
+                    <span className="message-sender\">AI Assistant</span>
                   </div>
                 </div>
-                <div className=\"message-content\">
-                  <div className=\"typing-indicator\">
+                <div className="message-content">
+                  <div className="typing-indicator">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -250,13 +250,13 @@ const AIChat: React.FC<AIChatProps> = ({
           </div>
           
           {messages.length === 1 && (
-            <div className=\"sample-questions\">
+            <div className="sample-questions">
               <h4>Try asking:</h4>
-              <div className=\"questions-grid\">
+              <div className="questions-grid">
                 {getSampleQuestions().map((question, index) => (
                   <button
                     key={index}
-                    className=\"sample-question\"
+                    className="sample-question\"
                     onClick={() => handleSuggestionClick(question)}
                   >
                     {question}
@@ -266,20 +266,20 @@ const AIChat: React.FC<AIChatProps> = ({
             </div>
           )}
           
-          <form className=\"chat-input-form\" onSubmit={handleSubmit}>
-            <div className=\"input-container\">
+          <form className="chat-input-form" onSubmit={handleSubmit}>
+            <div className="input-container">
               <input
                 ref={inputRef}
-                type=\"text\"
+                type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder=\"Ask me anything about your data...\"
-                className=\"chat-input\"
+                placeholder="Ask me anything about your data..."
+                className="chat-input"
                 disabled={isLoading}
               />
               <button
-                type=\"submit\"
-                className=\"send-button\"
+                type="submit"
+                className="send-button"
                 disabled={!inputValue.trim() || isLoading}
               >
                 {isLoading ? '⏳' : '📤'}
@@ -292,4 +292,4 @@ const AIChat: React.FC<AIChatProps> = ({
   );
 };
 
-export default AIChat;", "original_text": "", "replace_all": false}]
+export default AIChat;

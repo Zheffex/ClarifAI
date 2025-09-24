@@ -546,7 +546,7 @@ export class PredictionEngine {
     return {
       anomalies: anomalies.sort((a, b) => b.score - a.score),
       threshold,
-      method
+      method: method as 'statistical' | 'isolation_forest' | 'z_score'
     };
   }
 
@@ -632,4 +632,4 @@ export class PredictionEngine {
     const denominator = Math.sqrt(sumXSquared * sumYSquared);
     return denominator === 0 ? 0 : numerator / denominator;
   }
-}", "original_text": "", "replace_all": false}]
+}

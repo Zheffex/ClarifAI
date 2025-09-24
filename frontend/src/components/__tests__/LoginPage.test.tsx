@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import LoginPage from '../pages/LoginPage';
-import { AuthProvider } from '../contexts/AuthContext';
+import LoginPage from '../../pages/LoginPage';
+import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mock the fetch function
 (global as any).fetch = jest.fn();

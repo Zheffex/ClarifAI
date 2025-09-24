@@ -166,10 +166,10 @@ export class NLPService {
     // Extract dataset names
     const mentionedDatasets = datasets.filter(dataset => 
       text.includes(dataset.name.toLowerCase()) ||
-      dataset.tags?.some(tag => text.includes(tag.toLowerCase()))
+      dataset.tags?.some((tag: string) => text.includes(tag.toLowerCase()))
     );
     if (mentionedDatasets.length > 0) {
-      entities.datasets = mentionedDatasets.map(d => d.id);
+      entities.datasets = mentionedDatasets.map(d => d._id);
     }
 
     // Extract chart type
@@ -333,7 +333,7 @@ export class NLPService {
       parts.push(`showing ${query.entities.aggregation} values`);
     }
 
-    return parts.length > 0 ? parts.join(' ') + '.' : 'I\\'ll help you analyze your data.';
+    return parts.length > 0 ? parts.join(' ') + '.' : 'I\'ll help you analyze your data.';
   }
 
   /**
@@ -512,4 +512,4 @@ export class NLPService {
       }
     ];
   }
-}", "original_text": "", "replace_all": false}]
+}

@@ -43,7 +43,7 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
 
   useEffect(() => {
     loadQualityData();
-  }, [dataset.id]);
+  }, [dataset._id]);
 
   const loadQualityData = async () => {
     setLoading(true);
@@ -52,7 +52,7 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/datasets/${dataset.id}/validate`, {
+      const response = await fetch(`/api/datasets/${dataset._id}/validate`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -101,32 +101,32 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     const color = getScoreColor(score);
     
     return (
-      <div className=\"score-circle\" style={{ width: size, height: size }}>
+      <div className="score-circle" style={{ width: size, height: size }}>
         <svg width={size} height={size}>
           <circle
             cx={size / 2}
             cy={size / 2}
             r={size / 2 - 10}
-            fill=\"none\"
-            stroke=\"#e9ecef\"
-            strokeWidth=\"8\"
+            fill="none"
+            stroke="#e9ecef"
+            strokeWidth="8"
           />
           <circle
             cx={size / 2}
             cy={size / 2}
             r={size / 2 - 10}
-            fill=\"none\"
+            fill="none"
             stroke={color}
-            strokeWidth=\"8\"
+            strokeWidth="8"
             strokeDasharray={strokeDasharray}
-            strokeDashoffset=\"0\"
-            strokeLinecap=\"round\"
+            strokeDashoffset="0"
+            strokeLinecap="round"
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            className=\"score-progress\"
+            className="score-progress"
           />
         </svg>
-        <div className=\"score-text\">
-          <div className=\"score-value\">{formatPercentage(score)}</div>
+        <div className="score-text">
+          <div className="score-value">{formatPercentage(score)}</div>
         </div>
       </div>
     );
@@ -139,45 +139,45 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     const { validation } = qualityData;
     
     return (
-      <div className=\"quality-overview\">
-        <div className=\"overall-score-section\">
-          <div className=\"score-display\">
+      <div className="quality-overview">
+        <div className="overall-score-section">
+          <div className="score-display">
             {renderScoreCircle(overall.score, 150)}
-            <div className=\"grade-info\">
+            <div className="grade-info">
               <div 
-                className=\"grade-badge\"
+                className="grade-badge"
                 style={{ backgroundColor: getGradeColor(overall.grade) }}
               >
                 Grade {overall.grade}
               </div>
-              <p className=\"score-summary\">{overall.summary}</p>
+              <p className="score-summary">{overall.summary}</p>
             </div>
           </div>
         </div>
         
-        <div className=\"validation-stats\">
-          <div className=\"stat-grid\">
-            <div className=\"stat-card\">
-              <div className=\"stat-value\">{validation.totalRows.toLocaleString()}</div>
-              <div className=\"stat-label\">Total Rows</div>
+        <div className="validation-stats">
+          <div className="stat-grid">
+            <div className="stat-card">
+              <div className="stat-value">{validation.totalRows.toLocaleString()}</div>
+              <div className="stat-label">Total Rows</div>
             </div>
             
-            <div className=\"stat-card valid\">
-              <div className=\"stat-value\">{validation.validRows.toLocaleString()}</div>
-              <div className=\"stat-label\">Valid Rows</div>
-              <div className=\"stat-percentage\">
+            <div className="stat-card valid">
+              <div className="stat-value">{validation.validRows.toLocaleString()}</div>
+              <div className="stat-label">Valid Rows</div>
+              <div className="stat-percentage">
                 {formatPercentage(validation.validRows / validation.totalRows)}
               </div>
             </div>
             
-            <div className=\"stat-card errors\">
-              <div className=\"stat-value\">{validation.errorCount.toLocaleString()}</div>
-              <div className=\"stat-label\">Errors</div>
+            <div className="stat-card errors">
+              <div className="stat-value">{validation.errorCount.toLocaleString()}</div>
+              <div className="stat-label">Errors</div>
             </div>
             
-            <div className=\"stat-card warnings\">
-              <div className=\"stat-value\">{validation.warningCount.toLocaleString()}</div>
-              <div className=\"stat-label\">Warnings</div>
+            <div className="stat-card warnings">
+              <div className="stat-value">{validation.warningCount.toLocaleString()}</div>
+              <div className="stat-label">Warnings</div>
             </div>
           </div>
         </div>
@@ -191,19 +191,17 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     const { dimensions } = qualityData.qualityReport;
     
     return (
-      <div className=\"quality-dimensions\">
-        <div className=\"dimensions-grid\">
+      <div className="quality-dimensions">
+        <div className="dimensions-grid">
           {Object.entries(dimensions).map(([key, dimension]) => (
-            <div key={key} className=\"dimension-card\">
-              <div className=\"dimension-header\">
+            <div key={key} className="dimension-card">
+              <div className="dimension-header">
                 <h4>{key.charAt(0).toUpperCase() + key.slice(1)}</h4>
-                <div className=\"dimension-score\">
+                <div className="dimension-score">
                   {renderScoreCircle(dimension.score, 80)}
                 </div>
               </div>
-              <div className=\"dimension-details\">
-                <p>{dimension.details}</p>
-              </div>
+              <p className="dimension-details">{dimension.details}</p>
             </div>
           ))}
         </div>
@@ -217,52 +215,35 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     const { fieldSummary } = qualityData.validation;
     
     return (
-      <div className=\"field-quality\">
-        <div className=\"field-quality-list\">
+      <div className="quality-fields">
+        <div className="fields-list">
           {Object.entries(fieldSummary).map(([fieldName, summary]) => {
             const total = summary.validCount + summary.errorCount + summary.warningCount;
             const validPercentage = total > 0 ? summary.validCount / total : 0;
-            const errorPercentage = total > 0 ? summary.errorCount / total : 0;
-            const warningPercentage = total > 0 ? summary.warningCount / total : 0;
             
             return (
-              <div key={fieldName} className=\"field-quality-item\">
-                <div className=\"field-info\">
+              <div key={fieldName} className="field-card">
+                <div className="field-header">
                   <h4>{fieldName}</h4>
-                  <div className=\"field-stats\">
-                    <span className=\"field-stat valid\">
-                      ✓ {summary.validCount} valid
-                    </span>
-                    {summary.errorCount > 0 && (
-                      <span className=\"field-stat errors\">
-                        ✗ {summary.errorCount} errors
-                      </span>
-                    )}
-                    {summary.warningCount > 0 && (
-                      <span className=\"field-stat warnings\">
-                        ⚠ {summary.warningCount} warnings
-                      </span>
-                    )}
+                  <div className="field-score">
+                    {renderScoreCircle(validPercentage, 60)}
                   </div>
                 </div>
                 
-                <div className=\"field-quality-bar\">
-                  <div className=\"quality-bar\">
-                    <div 
-                      className=\"bar-segment valid\"
-                      style={{ width: `${validPercentage * 100}%` }}
-                    />
-                    <div 
-                      className=\"bar-segment warnings\"
-                      style={{ width: `${warningPercentage * 100}%` }}
-                    />
-                    <div 
-                      className=\"bar-segment errors\"
-                      style={{ width: `${errorPercentage * 100}%` }}
-                    />
+                <div className="field-stats">
+                  <div className="field-stat valid">
+                    <span className="stat-count">{summary.validCount}</span>
+                    <span className="stat-label">Valid</span>
                   </div>
-                  <div className=\"quality-percentage\">
-                    {formatPercentage(validPercentage)}
+                  
+                  <div className="field-stat errors">
+                    <span className="stat-count">{summary.errorCount}</span>
+                    <span className="stat-label">Errors</span>
+                  </div>
+                  
+                  <div className="field-stat warnings">
+                    <span className="stat-count">{summary.warningCount}</span>
+                    <span className="stat-label">Warnings</span>
                   </div>
                 </div>
               </div>
@@ -278,38 +259,35 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     
     const { recommendations } = qualityData.qualityReport;
     
-    if (recommendations.length === 0) {
-      return (
-        <div className=\"no-recommendations\">
-          <div className=\"success-icon\">✓</div>
-          <h3>Excellent Data Quality!</h3>
-          <p>No specific recommendations at this time. Your data appears to be well-structured and clean.</p>
-        </div>
-      );
-    }
-    
     return (
-      <div className=\"recommendations\">
-        <div className=\"recommendations-list\">
-          {recommendations.map((recommendation, index) => (
-            <div key={index} className=\"recommendation-item\">
-              <div className=\"recommendation-icon\">💡</div>
-              <div className=\"recommendation-content\">
-                <p>{recommendation}</p>
+      <div className="quality-recommendations">
+        {recommendations.length === 0 ? (
+          <div className="no-recommendations">
+            <h3>No Recommendations</h3>
+            <p>Your data quality is excellent! No improvements are needed at this time.</p>
+          </div>
+        ) : (
+          <div className="recommendations-list">
+            {recommendations.map((recommendation, index) => (
+              <div key={index} className="recommendation-card">
+                <div className="recommendation-icon">💡</div>
+                <div className="recommendation-content">
+                  <p>{recommendation}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
 
   if (loading) {
     return (
-      <div className=\"quality-report-overlay\">
-        <div className=\"quality-report-modal\">
-          <div className=\"quality-loading\">
-            <div className=\"loading-spinner\"></div>
+      <div className="quality-report-overlay">
+        <div className="quality-report-modal">
+          <div className="quality-loading">
+            <div className="loading-spinner"></div>
             <p>Analyzing data quality...</p>
           </div>
         </div>
@@ -319,17 +297,17 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
 
   if (error) {
     return (
-      <div className=\"quality-report-overlay\">
-        <div className=\"quality-report-modal\">
-          <div className=\"quality-error\">
+      <div className="quality-report-overlay">
+        <div className="quality-report-modal">
+          <div className="quality-error">
             <h3>Failed to Load Quality Report</h3>
             <p>{error}</p>
-            <div className=\"error-actions\">
-              <button onClick={loadQualityData} className=\"retry-button\">
+            <div className="error-actions">
+              <button onClick={loadQualityData} className="retry-button">
                 Retry
               </button>
               {onClose && (
-                <button onClick={onClose} className=\"close-button\">
+                <button onClick={onClose} className="close-button">
                   Close
                 </button>
               )}
@@ -345,11 +323,11 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
   }
 
   return (
-    <div className=\"quality-report-overlay\">
-      <div className=\"quality-report-modal\">
-        <div className=\"quality-report-header\">
+    <div className="quality-report-overlay">
+      <div className="quality-report-modal">
+        <div className="quality-report-header">
           <h2>Data Quality Report</h2>
-          <div className=\"view-mode-tabs\">
+          <div className="view-mode-tabs">
             <button
               className={viewMode === 'overview' ? 'active' : ''}
               onClick={() => setViewMode('overview')}
@@ -376,13 +354,13 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
             </button>
           </div>
           {onClose && (
-            <button onClick={onClose} className=\"close-button\">
+            <button onClick={onClose} className="close-button">
               ✕
             </button>
           )}
         </div>
         
-        <div className=\"quality-report-content\">
+        <div className="quality-report-content">
           {viewMode === 'overview' && renderOverview()}
           {viewMode === 'dimensions' && renderDimensions()}
           {viewMode === 'fields' && renderFields()}
@@ -393,4 +371,4 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
   );
 };
 
-export default DataQualityReport;", "original_text": "", "replace_all": false}]
+export default DataQualityReport;

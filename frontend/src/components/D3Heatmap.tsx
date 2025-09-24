@@ -298,4 +298,4 @@ export const prepareHeatmapData = (
   return heatmapData;
 };
 
-export default D3Heatmap;", "original_text": "", "replace_all": false}]
+export default D3Heatmap;

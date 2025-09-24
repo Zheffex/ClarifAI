@@ -72,26 +72,26 @@ const Widget: React.FC<WidgetProps> = ({
       data-widget-id={config.id}
       data-widget-type={config.type}
     >
-      <div className=\"widget-header\">
-        <div className=\"widget-title-section\">
-          <h3 className=\"widget-title\">{config.title}</h3>
+      <div className="widget-header">
+        <div className="widget-title-section">
+          <h3 className="widget-title">{config.title}</h3>
           {config.description && (
-            <p className=\"widget-description\">{config.description}</p>
+            <p className="widget-description">{config.description}</p>
           )}
         </div>
         
-        <div className=\"widget-controls\">
+        <div className="widget-controls">
           {config.lastUpdated && (
-            <span className=\"widget-last-updated\">
+            <span className="widget-last-updated">
               {formatLastUpdated(config.lastUpdated)}
             </span>
           )}
           
           {onRefresh && (
             <button
-              className=\"widget-control-button refresh\"
+              className="widget-control-button refresh"
               onClick={() => onRefresh(config.id)}
-              title=\"Refresh\"
+              title="Refresh"
             >
               🔄
             </button>
@@ -101,35 +101,35 @@ const Widget: React.FC<WidgetProps> = ({
             <>
               {onEdit && (
                 <button
-                  className=\"widget-control-button edit\"
+                  className="widget-control-button edit"
                   onClick={() => onEdit(config)}
-                  title=\"Edit Widget\"
+                  title="Edit Widget"
                 >
                   ✏️
                 </button>
               )}
               
               {onResize && (
-                <div className=\"widget-resize-controls\">
+                <div className="widget-resize-controls">
                   <select
                     value={config.size}
                     onChange={(e) => onResize(config.id, e.target.value as WidgetSize)}
-                    className=\"widget-size-select\"
-                    title=\"Resize Widget\"
+                    className="widget-size-select"
+                    title="Resize Widget"
                   >
-                    <option value=\"small\">Small</option>
-                    <option value=\"medium\">Medium</option>
-                    <option value=\"large\">Large</option>
-                    <option value=\"xlarge\">X-Large</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                    <option value="xlarge">X-Large</option>
                   </select>
                 </div>
               )}
               
               {onDelete && (
                 <button
-                  className=\"widget-control-button delete\"
+                  className="widget-control-button delete"
                   onClick={() => onDelete(config.id)}
-                  title=\"Delete Widget\"
+                  title="Delete Widget"
                 >
                   🗑️
                 </button>
@@ -139,13 +139,13 @@ const Widget: React.FC<WidgetProps> = ({
         </div>
       </div>
       
-      <div className=\"widget-content\">
+      <div className="widget-content">
         {children}
       </div>
       
       {isEditing && (
-        <div className=\"widget-edit-overlay\">
-          <div className=\"widget-drag-handle\" title=\"Drag to move\">
+        <div className="widget-edit-overlay">
+          <div className="widget-drag-handle" title="Drag to move">
             ⋮⋮
           </div>
         </div>
@@ -154,4 +154,4 @@ const Widget: React.FC<WidgetProps> = ({
   );
 };
 
-export default Widget;", "original_text": "", "replace_all": false}]
+export default Widget;

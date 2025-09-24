@@ -222,12 +222,28 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     switch (widget.type) {
       case 'metric':
-        return <MetricWidget {...commonProps} />;
+        // Type guard to ensure data exists for MetricWidget
+        if (!widget.data) {
+          return (
+            <div key={widget.id} className="widget-placeholder">
+              <p>Missing metric data</p>
+            </div>
+          );
+        }
+        return <MetricWidget {...commonProps} config={{...widget, data: widget.data}} />;
       case 'chart':
-        return <ChartWidget {...commonProps} />;
+        // Type guard to ensure data exists for ChartWidget
+        if (!widget.data) {
+          return (
+            <div key={widget.id} className="widget-placeholder">
+              <p>Missing chart data</p>
+            </div>
+          );
+        }
+        return <ChartWidget {...commonProps} config={{...widget, data: widget.data}} />;
       default:
         return (
-          <div key={widget.id} className=\"widget-placeholder\">
+          <div key={widget.id} className="widget-placeholder">
             <p>Unsupported widget type: {widget.type}</p>
           </div>
         );
@@ -236,8 +252,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   if (loading) {
     return (
-      <div className=\"dashboard-loading\">
-        <div className=\"loading-spinner\"></div>
+      <div className="dashboard-loading">
+        <div className="loading-spinner"></div>
         <p>Loading dashboard...</p>
       </div>
     );
@@ -245,17 +261,17 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className={`dashboard ${className}`}>
-      <div className=\"dashboard-header\">
-        <div className=\"dashboard-info\">
-          <h1 className=\"dashboard-title\">{title}</h1>
-          {description && <p className=\"dashboard-description\">{description}</p>}
+      <div className="dashboard-header">
+        <div className="dashboard-info">
+          <h1 className="dashboard-title">{title}</h1>
+          {description && <p className="dashboard-description">{description}</p>}
         </div>
         
-        <div className=\"dashboard-controls\">
+        <div className="dashboard-controls">
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className=\"dashboard-button edit\"
+              className="dashboard-button edit"
             >
               Edit Dashboard
             </button>
@@ -265,19 +281,19 @@ const Dashboard: React.FC<DashboardProps> = ({
             <>
               <button
                 onClick={addSampleWidgets}
-                className=\"dashboard-button add\"
+                className="dashboard-button add"
               >
                 Add Sample Widgets
               </button>
               <button
                 onClick={handleCancel}
-                className=\"dashboard-button cancel\"
+                className="dashboard-button cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className=\"dashboard-button save\"
+                className="dashboard-button save"
               >
                 Save Dashboard
               </button>
@@ -286,16 +302,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
       
-      <div className=\"dashboard-content\">
+      <div className="dashboard-content">
         {widgets.length === 0 ? (
-          <div className=\"dashboard-empty\">
-            <div className=\"empty-icon\">📊</div>
+          <div className="dashboard-empty">
+            <div className="empty-icon">📊</div>
             <h3>No Widgets</h3>
             <p>Your dashboard is empty. Add some widgets to get started.</p>
             {isEditing && (
               <button
                 onClick={addSampleWidgets}
-                className=\"dashboard-button add\"
+                className="dashboard-button add"
               >
                 Add Sample Widgets
               </button>
@@ -314,7 +330,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
       
       {isEditing && (
-        <div className=\"dashboard-edit-help\">
+        <div className="dashboard-edit-help">
           <p>
             <strong>Edit Mode:</strong> You can resize widgets using the dropdown, 
             delete them with the trash icon, or add new ones using the controls above.
@@ -325,4 +341,4 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-export default Dashboard;", "original_text": "", "replace_all": false}]
+export default Dashboard;

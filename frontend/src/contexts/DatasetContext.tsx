@@ -4,8 +4,8 @@ import { Dataset, DatasetContextType } from '../types';
 const DatasetContext = createContext<DatasetContextType | undefined>(undefined);
 
 export function DatasetProvider({ children }: { children: ReactNode }) {
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [currentDataset, setCurrentDataset] = useState<Dataset | null>(null);
+  const [datasets] = useState<Dataset[]>([]);
+  const [currentDataset] = useState<Dataset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

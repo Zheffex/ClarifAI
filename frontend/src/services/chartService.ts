@@ -82,7 +82,7 @@ export class ChartService {
   ): Promise<ChartConfig> {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/datasets/${dataset.id}/preview?limit=1000`, {
+      const response = await fetch(`/api/datasets/${dataset._id}/preview?limit=1000`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -588,4 +588,4 @@ export class ChartService {
   private static capitalizeFirst(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
-}", "original_text": "", "replace_all": false}]
+}

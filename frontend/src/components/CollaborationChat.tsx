@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCollaboration } from '../contexts/CollaborationContext';
 import './CollaborationChat.css';
 
@@ -72,9 +72,9 @@ const CollaborationChat: React.FC<CollaborationChatProps> = ({
 
   if (!isConnected) {
     return (
-      <div className=\"collaboration-chat\">
-        <div className=\"chat-status disconnected\">
-          <div className=\"status-indicator\"></div>
+      <div className="collaboration-chat">
+        <div className="chat-status disconnected">
+          <div className="status-indicator"></div>
           <span>Connecting to collaboration server...</span>
         </div>
       </div>
@@ -82,18 +82,18 @@ const CollaborationChat: React.FC<CollaborationChatProps> = ({
   }
 
   return (
-    <div className=\"collaboration-chat\">
-      <div className=\"chat-header\">
-        <div className=\"chat-status connected\">
-          <div className=\"status-indicator\"></div>
+    <div className="collaboration-chat">
+      <div className="chat-header">
+        <div className="chat-status connected">
+          <div className="status-indicator"></div>
           <span>Connected • {participants.length} participant{participants.length !== 1 ? 's' : ''}</span>
         </div>
         
-        <div className=\"participants-list\">
+        <div className="participants-list">
           {participants.map(participant => (
             <div 
               key={participant.userId}
-              className=\"participant-avatar\"
+              className="participant-avatar"
               style={{ backgroundColor: participant.color }}
               title={participant.username}
             >
@@ -103,9 +103,9 @@ const CollaborationChat: React.FC<CollaborationChatProps> = ({
         </div>
       </div>
 
-      <div className=\"chat-messages\" ref={chatContainerRef}>
+      <div className="chat-messages" ref={chatContainerRef}>
         {messages.length === 0 ? (
-          <div className=\"empty-messages\">
+          <div className="empty-messages">
             <p>No messages yet. Start collaborating by sending a message!</p>
           </div>
         ) : (
@@ -115,22 +115,22 @@ const CollaborationChat: React.FC<CollaborationChatProps> = ({
               className={`message ${message.type} ${message.userId === 'system' ? 'system' : 'user'}`}
             >
               {message.type === 'system' ? (
-                <div className=\"system-message\">
-                  <span className=\"system-text\">{message.message}</span>
-                  <span className=\"message-time\">{formatTime(message.timestamp)}</span>
+                <div className="system-message">
+                  <span className="system-text">{message.message}</span>
+                  <span className="message-time">{formatTime(message.timestamp)}</span>
                 </div>
               ) : (
-                <div className=\"user-message\">
-                  <div className=\"message-header\">
+                <div className="user-message">
+                  <div className="message-header">
                     <span 
-                      className=\"username\"
+                      className="username"
                       style={{ color: getParticipantColor(message.userId) }}
                     >
                       {message.username}
                     </span>
-                    <span className=\"message-time\">{formatTime(message.timestamp)}</span>
+                    <span className="message-time">{formatTime(message.timestamp)}</span>
                   </div>
-                  <div className=\"message-content\">{message.message}</div>
+                  <div className="message-content">{message.message}</div>
                 </div>
               )}
             </div>
@@ -139,30 +139,30 @@ const CollaborationChat: React.FC<CollaborationChatProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      <form className=\"chat-input-form\" onSubmit={handleSendMessage}>
-        <div className=\"input-container\">
+      <form className="chat-input-form" onSubmit={handleSendMessage}>
+        <div className="input-container">
           <input
-            type=\"text\"
+            type="text"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            placeholder=\"Type a message...\"
-            className=\"message-input\"
+            placeholder="Type a message..."
+            className="message-input"
             disabled={!isConnected || !currentRoom}
             maxLength={500}
           />
           <button 
-            type=\"submit\" 
-            className=\"send-button\"
+            type="submit" 
+            className="send-button"
             disabled={!messageInput.trim() || !isConnected || !currentRoom}
           >
-            <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\">
-              <line x1=\"22\" y1=\"2\" x2=\"11\" y2=\"13\"></line>
-              <polygon points=\"22,2 15,22 11,13 2,9\"></polygon>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22,2 15,22 11,13 2,9"></polygon>
             </svg>
           </button>
         </div>
-        <div className=\"input-info\">
-          <span className=\"char-count\">{messageInput.length}/500</span>
+        <div className="input-info">
+          <span className="char-count">{messageInput.length}/500</span>
         </div>
       </form>
     </div>

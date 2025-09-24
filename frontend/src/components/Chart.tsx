@@ -168,14 +168,14 @@ const Chart: React.FC<ChartProps> = ({
         );
       case 'heatmap':
         return (
-          <div className=\"heatmap-placeholder\">
+          <div className="heatmap-placeholder">
             <p>Heatmap visualization coming soon</p>
             <p>This chart type requires custom D3.js implementation</p>
           </div>
         );
       default:
         return (
-          <div className=\"chart-error\">
+          <div className="chart-error">
             <p>Unsupported chart type: {config.type}</p>
           </div>
         );
@@ -185,37 +185,37 @@ const Chart: React.FC<ChartProps> = ({
   return (
     <div className={`chart-container ${className} ${isFullscreen ? 'fullscreen' : ''}`}>
       {showControls && (
-        <div className=\"chart-header\">
-          <div className=\"chart-info\">
-            {config.title && <h3 className=\"chart-title\">{config.title}</h3>}
-            {config.description && <p className=\"chart-description\">{config.description}</p>}
+        <div className="chart-header">
+          <div className="chart-info">
+            {config.title && <h3 className="chart-title">{config.title}</h3>}
+            {config.description && <p className="chart-description">{config.description}</p>}
           </div>
           
-          <div className=\"chart-controls\">
-            <div className=\"chart-toggles\">
+          <div className="chart-controls">
+            <div className="chart-toggles">
               <button
                 className={`toggle-button ${showLegend ? 'active' : ''}`}
                 onClick={() => setShowLegend(!showLegend)}
-                title=\"Toggle Legend\"
+                title="Toggle Legend"
               >
                 Legend
               </button>
               <button
                 className={`toggle-button ${showTooltip ? 'active' : ''}`}
                 onClick={() => setShowTooltip(!showTooltip)}
-                title=\"Toggle Tooltips\"
+                title="Toggle Tooltips"
               >
                 Tooltips
               </button>
             </div>
             
             {allowExport && (
-              <div className=\"export-controls\">
-                <div className=\"dropdown\">
-                  <button className=\"dropdown-toggle\" title=\"Export Chart\">
+              <div className="export-controls">
+                <div className="dropdown">
+                  <button className="dropdown-toggle" title="Export Chart">
                     Export ↓
                   </button>
-                  <div className=\"dropdown-menu\">
+                  <div className="dropdown-menu">
                     <button onClick={() => handleExport('png')}>PNG</button>
                     <button onClick={() => handleExport('jpeg')}>JPEG</button>
                     <button onClick={() => handleExport('pdf')} disabled>
@@ -227,7 +227,7 @@ const Chart: React.FC<ChartProps> = ({
             )}
             
             <button
-              className=\"fullscreen-button\"
+              className="fullscreen-button"
               onClick={handleFullscreen}
               title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
@@ -237,23 +237,23 @@ const Chart: React.FC<ChartProps> = ({
         </div>
       )}
       
-      <div className=\"chart-content\" style={{ height: `${height}px` }}>
+      <div className="chart-content" style={{ height: `${height}px` }}>
         {renderChart()}
       </div>
       
       {isFullscreen && (
-        <div className=\"fullscreen-overlay\" onClick={() => setIsFullscreen(false)}>
-          <div className=\"fullscreen-chart\" onClick={(e) => e.stopPropagation()}>
-            <div className=\"fullscreen-header\">
+        <div className="fullscreen-overlay" onClick={() => setIsFullscreen(false)}>
+          <div className="fullscreen-chart" onClick={(e) => e.stopPropagation()}>
+            <div className="fullscreen-header">
               <h2>{config.title}</h2>
               <button
-                className=\"close-fullscreen\"
+                className="close-fullscreen"
                 onClick={() => setIsFullscreen(false)}
               >
                 ✕
               </button>
             </div>
-            <div className=\"fullscreen-content\">
+            <div className="fullscreen-content">
               {renderChart()}
             </div>
           </div>
@@ -263,4 +263,4 @@ const Chart: React.FC<ChartProps> = ({
   );
 };
 
-export default Chart;", "original_text": "", "replace_all": false}]
+export default Chart;

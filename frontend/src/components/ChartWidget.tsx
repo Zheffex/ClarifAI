@@ -122,8 +122,8 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <div className=\"chart-widget-loading\">
-          <div className=\"loading-spinner\"></div>
+        <div className="chart-widget-loading">
+          <div className="loading-spinner"></div>
           <p>Loading chart data...</p>
         </div>
       );
@@ -131,13 +131,13 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
 
     if (error) {
       return (
-        <div className=\"chart-widget-error\">
-          <div className=\"error-icon\">⚠️</div>
+        <div className="chart-widget-error">
+          <div className="error-icon">⚠️</div>
           <h4>Chart Error</h4>
           <p>{error}</p>
           <button 
             onClick={loadChartData}
-            className=\"retry-button\"
+            className="retry-button"
           >
             Retry
           </button>
@@ -147,14 +147,14 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
 
     if (!chartConfig) {
       return (
-        <div className=\"chart-widget-empty\">
-          <div className=\"empty-icon\">📊</div>
+        <div className="chart-widget-empty">
+          <div className="empty-icon">📊</div>
           <h4>No Chart Data</h4>
           <p>Configure the widget to display a chart</p>
           {isEditing && onEdit && (
             <button 
               onClick={() => onEdit(config)}
-              className=\"configure-button\"
+              className="configure-button"
             >
               Configure Chart
             </button>
@@ -169,7 +169,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
         height={getWidgetHeight()}
         showControls={false}
         allowExport={!isEditing}
-        className=\"chart-widget-chart\"
+        className="chart-widget-chart"
       />
     );
   };
@@ -185,11 +185,11 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({
       onDelete={onDelete}
       onResize={onResize}
       onRefresh={onRefresh}
-      className={`chart-widget ${className} ${loading ? 'loading' : ''} ${error ? 'error' : ''}`}
+      className={`chart-widget ${className || ''} ${loading ? 'loading' : ''} ${error ? 'error' : ''}`}
     >
       {renderContent()}
     </Widget>
   );
 };
 
-export default ChartWidget;", "original_text": "", "replace_all": false}]
+export default ChartWidget;

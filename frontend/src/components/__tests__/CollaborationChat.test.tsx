@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '../contexts/AuthContext';
-import { CollaborationProvider } from '../contexts/CollaborationContext';
-import CollaborationChat from '../components/CollaborationChat';
+import { AuthProvider } from '../../contexts/AuthContext';
+import { CollaborationProvider } from '../../contexts/CollaborationContext';
+import CollaborationChat from '../CollaborationChat';
 
 // Mock Socket.IO
 jest.mock('socket.io-client', () => {
@@ -56,7 +56,7 @@ const mockCollaborationContext = {
   clearMessages: jest.fn()
 };
 
-jest.mock('../contexts/CollaborationContext', () => ({
+jest.mock('../../contexts/CollaborationContext', () => ({
   useCollaboration: () => mockCollaborationContext,
   CollaborationProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
@@ -66,9 +66,9 @@ const MockedCollaborationChat = () => (
     <AuthProvider>
       <CollaborationProvider>
         <CollaborationChat 
-          roomId=\"test-room\"
-          resourceType=\"dataset\"
-          resourceId=\"test-dataset-id\"
+          roomId="test-room"
+          resourceType="dataset"
+          resourceId="test-dataset-id"
         />
       </CollaborationProvider>
     </AuthProvider>
@@ -192,7 +192,7 @@ describe('CollaborationChat - Disconnected State', () => {
   };
 
   beforeEach(() => {
-    jest.doMock('../contexts/CollaborationContext', () => ({
+    jest.doMock('../../contexts/CollaborationContext', () => ({
       useCollaboration: () => disconnectedContext,
       CollaborationProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
     }));

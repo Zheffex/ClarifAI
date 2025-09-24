@@ -109,40 +109,40 @@ const MetricWidget: React.FC<MetricWidgetProps> = ({
       onDelete={onDelete}
       onResize={onResize}
       onRefresh={onRefresh}
-      className={`metric-widget ${className}`}
+      className={`metric-widget ${className || ''}`}
     >
-      <div className=\"metric-content\">
+      <div className="metric-content">
         {data.icon && (
-          <div className=\"metric-icon\" style={{ color: data.color }}>
+          <div className="metric-icon" style={{ color: data.color }}>
             {data.icon}
           </div>
         )}
         
-        <div className=\"metric-main\">
+        <div className="metric-main">
           <div 
-            className=\"metric-value\"
+            className="metric-value"
             style={{ color: data.color }}
           >
             {formatValue(data.value, data.format, data.prefix, data.suffix)}
           </div>
           
-          <div className=\"metric-label\">
+          <div className="metric-label">
             {data.label}
           </div>
         </div>
         
         {data.change && (
-          <div className=\"metric-change\">
+          <div className="metric-change">
             <div 
-              className=\"metric-change-value\"
+              className="metric-change-value"
               style={{ color: getChangeColor(data.change.type) }}
             >
-              <span className=\"metric-change-icon\">
+              <span className="metric-change-icon">
                 {getChangeIcon(data.change.type)}
               </span>
               {data.change.value > 0 ? '+' : ''}{data.change.value}%
             </div>
-            <div className=\"metric-change-period\">
+            <div className="metric-change-period">
               vs {data.change.period}
             </div>
           </div>
@@ -152,4 +152,4 @@ const MetricWidget: React.FC<MetricWidgetProps> = ({
   );
 };
 
-export default MetricWidget;", "original_text": "", "replace_all": false}]
+export default MetricWidget;

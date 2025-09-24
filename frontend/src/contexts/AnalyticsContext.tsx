@@ -4,10 +4,10 @@ import { AnalysisSession, AnalyticsContextType, Prediction } from '../types';
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(undefined);
 
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
-  const [sessions, setSessions] = useState<AnalysisSession[]>([]);
-  const [currentSession, setCurrentSession] = useState<AnalysisSession | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sessions] = useState<AnalysisSession[]>([]);
+  const [currentSession] = useState<AnalysisSession | null>(null);
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   const createSession = async (datasetId: string, title: string): Promise<AnalysisSession> => {
     throw new Error('Create session not yet implemented');

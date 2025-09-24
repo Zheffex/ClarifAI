@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCollaboration } from '../contexts/CollaborationContext';
 import './CollaborativeCursors.css';
 
@@ -67,11 +67,11 @@ const CollaborativeCursors: React.FC<CollaborativeCursorsProps> = ({
   }
 
   return (
-    <div className=\"collaborative-cursors\">
+    <div className="collaborative-cursors">
       {visibleCursors.map(cursor => (
         <div
           key={cursor.userId}
-          className=\"cursor-container\"
+          className="cursor-container"
           style={{
             position: 'absolute',
             left: cursor.x,
@@ -82,22 +82,22 @@ const CollaborativeCursors: React.FC<CollaborativeCursorsProps> = ({
           }}
         >
           <svg
-            width=\"20\"
-            height=\"20\"
-            viewBox=\"0 0 24 24\"
-            className=\"cursor-icon\"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            className="cursor-icon"
             style={{ color: cursor.color }}
           >
             <path
-              d=\"M7.4,2.5l8.8,8.8l-4.4,1.1l3.3,6.1l-2.2,1.2l-3.3-6.1l-2.2,4.4L7.4,2.5z\"
-              fill=\"currentColor\"
-              stroke=\"white\"
-              strokeWidth=\"1\"
+              d="M7.4,2.5l8.8,8.8l-4.4,1.1l3.3,6.1l-2.2,1.2l-3.3-6.1l-2.2,4.4L7.4,2.5z"
+              fill="currentColor"
+              stroke="white"
+              strokeWidth="1"
             />
           </svg>
           
           <div 
-            className=\"cursor-label\"
+            className="cursor-label"
             style={{ backgroundColor: cursor.color }}
           >
             {cursor.username}
