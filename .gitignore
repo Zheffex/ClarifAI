@@ -46,3 +46,32 @@ test-uploads/
 # Temporary files
 tmp/
 temp/
+
+# Unexpected files
+*.exe
+*.so
+*.dll
+*.swp
+*.swo
+*.pyc
+*.rbc
+*.class
+*.sublime-project
+*.sublime-workspace
+*.DS_Store
+*.suo
+*.tmp
+*.bak
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.sql
+*.db
+*.tmp
+*.log
+*.lock
+*.sqlite
+*.sqlite3
+*.dat
+*.qoder
