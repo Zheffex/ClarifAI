@@ -158,7 +158,7 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'analyst' | 'viewer';
+  role: 'analyst' | 'viewer';
 }
 
 export interface AuthState {

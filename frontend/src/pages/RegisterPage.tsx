@@ -142,7 +142,6 @@ const RegisterPage: React.FC = () => {
             >
               <option value="viewer">Viewer - View and explore data</option>
               <option value="analyst">Analyst - Create and manage analyses</option>
-              <option value="admin">Admin - Full administrative access</option>
             </select>
           </div>
 

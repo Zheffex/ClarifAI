@@ -15,6 +15,11 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     throw new AppError('User with this email already exists', 400);
   }
 
+  // Prevent admin role assignment during registration
+  if (role === 'admin') {
+    throw new AppError('Admin role cannot be assigned during registration', 400);
+  }
+
   // Create new user
   const user = new User({
     email: email.toLowerCase(),
@@ -240,6 +245,7 @@ export const searchUsers = asyncHandler(async (req: Request, res: Response): Pro
 });
 
 // Validation rules
+// Validation rules
 export const validateRegister = [
   body('email')
     .isEmail()
@@ -258,8 +264,8 @@ export const validateRegister = [
     .withMessage('Last name must be between 2 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['admin', 'analyst', 'viewer'])
-    .withMessage('Role must be admin, analyst, or viewer')
+    .isIn(['analyst', 'viewer'])
+    .withMessage('Role must be analyst or viewer')
 ];
 
 export const validateLogin = [

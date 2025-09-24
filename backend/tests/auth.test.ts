@@ -376,11 +376,11 @@ describe('Auth Controller', () => {
     beforeEach(async () => {
       // Create and login a test user
       const userData = {
-        email: 'admin@example.com',
+        email: 'test@example.com',
         password: 'password123',
-        firstName: 'Admin',
+        firstName: 'Test',
         lastName: 'User',
-        role: 'admin'
+        role: 'analyst'
       };
 
       const registerResponse = await request(app)
@@ -389,7 +389,7 @@ describe('Auth Controller', () => {
 
       authToken = registerResponse.body.data.token;
 
-      // Create additional test users
+      // Create additional test users directly in database
       await User.create({
         email: 'john@example.com',
         passwordHash: 'hashedpassword',
