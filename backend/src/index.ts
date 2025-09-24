@@ -15,6 +15,7 @@ import authRoutes from './routes/auth';
 import datasetRoutes from './routes/datasets';
 import analyticsRoutes from './routes/analytics';
 import collaborationRoutes from './routes/collaboration';
+import aiRoutes from './routes/ai';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/datasets', datasetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/collaboration', collaborationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
