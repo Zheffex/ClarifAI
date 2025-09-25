@@ -7,6 +7,8 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { fileUploadService } from '../services/fileUploadService';
 import { SchemaDetectionService } from '../services/schemaDetectionService';
 import { DataValidationService } from '../services/dataValidationService';
+import { notificationService } from '../services/notificationService';
+import { anomalyDetectionService } from '../services/anomalyDetectionService';
 import { logger } from '../config/logger';
 
 const schemaDetectionService = new SchemaDetectionService();
@@ -134,6 +136,40 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
 
     await dataset.save();
     logger.info(`Dataset saved successfully with ID: ${dataset._id}`);
+
+    // Send notification for successful dataset upload
+    try {
+      await notificationService.createNotification({
+        userId: user._id.toString(),
+        type: 'data_change',
+        title: `Dataset "${dataset.name}" processed successfully`,
+        message: `Your dataset has been uploaded and is ready for analysis. Quality score: ${qualityReport.overall.score}/100 (${qualityReport.overall.grade}).`,
+        metadata: {
+          datasetId: dataset._id,
+          actionUrl: `/datasets/${dataset._id}`,
+          relatedData: {
+            datasetName: dataset.name,
+            qualityScore: qualityReport.overall.score,
+            qualityGrade: qualityReport.overall.grade
+          }
+        },
+        priority: 'normal',
+        channels: ['inApp', 'email']
+      });
+
+      // Trigger anomaly detection for the new dataset
+      setTimeout(async () => {
+        try {
+          await anomalyDetectionService.analyzeDatasetAnomalies(dataset._id.toString(), user._id.toString());
+        } catch (error) {
+          logger.error('Failed to trigger anomaly detection for new dataset:', error);
+        }
+      }, 5000); // Delay to allow processing to complete
+
+    } catch (notificationError) {
+      logger.error('Failed to send dataset upload notification:', notificationError);
+      // Don't fail the entire request if notification fails
+    }
 
     logger.info(`Dataset uploaded by user ${user.email}: ${dataset.name}`);
 

@@ -1,5 +1,14 @@
 import winston from 'winston';
-import { env } from './environment';
+
+// Get log level from environment or use default
+const getLogLevel = (): string => {
+  try {
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    return nodeEnv === 'production' ? 'warn' : 'debug';
+  } catch {
+    return 'debug';
+  }
+};
 
 // Define log levels
 const levels = {
@@ -46,7 +55,7 @@ const transports = [
 
 // Create the logger
 export const logger = winston.createLogger({
-  level: env.server.isProduction ? 'warn' : 'debug',
+  level: getLogLevel(),
   levels,
   format,
   transports,

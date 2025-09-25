@@ -16,6 +16,13 @@ export {
   IComment, 
   IAnnotation 
 } from './Collaboration';
+export {
+  Notification,
+  NotificationTemplate,
+  INotification,
+  INotificationTemplate,
+  INotificationPreferences
+} from './Notification';
 
 // Re-export mongoose types for convenience
 export { Types as MongooseTypes } from 'mongoose';

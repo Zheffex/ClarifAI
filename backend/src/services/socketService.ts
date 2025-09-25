@@ -50,7 +50,7 @@ interface DocumentEdit {
 }
 
 class SocketService {
-  private io: Server;
+  private io!: Server;
   private rooms: Map<string, RoomData> = new Map();
   private userColors: Map<string, string> = new Map();
   private colorPalette: string[] = [
@@ -58,19 +58,34 @@ class SocketService {
     '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
   ];
 
-  constructor(httpServer: HttpServer) {
-    this.io = new Server(httpServer, {
-      cors: {
-        origin: env.cors.frontendUrl,
-        methods: ["GET", "POST"],
-        credentials: true
-      },
-      transports: ['websocket', 'polling']
-    });
+  // Emit notification to specific user
+  emitToUser(userId: string, event: string, data: any): void {
+    try {
+      // Find all sockets for this user
+      const userSockets = Array.from(this.io.sockets.sockets.values())
+        .filter((socket: any) => socket.userId === userId);
+      
+      if (userSockets.length > 0) {
+        userSockets.forEach(socket => {
+          socket.emit(event, data);
+        });
+        logger.debug(`Emitted ${event} to user ${userId} (${userSockets.length} sockets)`);
+      } else {
+        logger.debug(`No active sockets found for user ${userId}`);
+      }
+    } catch (error) {
+      logger.error('Failed to emit notification to user:', error);
+    }
+  }
 
-    this.setupMiddleware();
-    this.setupEventHandlers();
-    logger.info('Socket.IO server initialized');
+  // Emit notification to room
+  emitToRoom(roomId: string, event: string, data: any): void {
+    try {
+      this.io.to(roomId).emit(event, data);
+      logger.debug(`Emitted ${event} to room ${roomId}`);
+    } catch (error) {
+      logger.error('Failed to emit notification to room:', error);
+    }
   }
 
   private setupMiddleware(): void {

@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import { logger } from './logger';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -31,6 +30,26 @@ interface EnvironmentConfig {
   OPENROUTER_MODEL: string;
   SITE_URL: string;
   SITE_NAME: string;
+  
+  // Email Configuration
+  EMAIL_HOST?: string | undefined;
+  EMAIL_PORT?: number;
+  EMAIL_USER?: string | undefined;
+  EMAIL_PASS?: string | undefined;
+  EMAIL_FROM?: string;
+  EMAIL_SECURE?: boolean;
+  
+  // Web Push Notifications
+  WEB_PUSH_PUBLIC_KEY?: string | undefined;
+  WEB_PUSH_PRIVATE_KEY?: string | undefined;
+  WEB_PUSH_CONTACT?: string | undefined;
+  
+  // Security & Encryption
+  ENCRYPTION_MASTER_KEY?: string | undefined;
+  ENCRYPTION_KEY_ID?: string;
+  REDIS_URL?: string;
+  RATE_LIMIT_WINDOW_MS?: number;
+  RATE_LIMIT_MAX_REQUESTS?: number;
 }
 
 class Environment {
@@ -52,7 +71,7 @@ class Environment {
     
     if (missingVars.length > 0) {
       const error = `Missing required environment variables: ${missingVars.join(', ')}`;
-      logger.error(error);
+      console.error(error);
       throw new Error(error);
     }
 
@@ -85,9 +104,29 @@ class Environment {
         OPENROUTER_MODEL: this.getString('OPENROUTER_MODEL', 'x-ai/grok-4-fast:free'),
         SITE_URL: this.getString('SITE_URL', 'http://localhost:3000'),
         SITE_NAME: this.getString('SITE_NAME', 'ClarifAI'),
+        
+        // Email Configuration (Optional)
+        EMAIL_HOST: this.getOptionalString('EMAIL_HOST'),
+        EMAIL_PORT: this.getNumber('EMAIL_PORT', 587),
+        EMAIL_USER: this.getOptionalString('EMAIL_USER'),
+        EMAIL_PASS: this.getOptionalString('EMAIL_PASS'),
+        EMAIL_FROM: this.getString('EMAIL_FROM', 'ClarifAI <noreply@clarifai.com>'),
+        EMAIL_SECURE: this.getBoolean('EMAIL_SECURE', false),
+        
+        // Web Push Notifications (Optional)
+        WEB_PUSH_PUBLIC_KEY: this.getOptionalString('WEB_PUSH_PUBLIC_KEY'),
+        WEB_PUSH_PRIVATE_KEY: this.getOptionalString('WEB_PUSH_PRIVATE_KEY'),
+        WEB_PUSH_CONTACT: this.getOptionalString('WEB_PUSH_CONTACT'),
+        
+        // Security & Encryption (Optional)
+        ENCRYPTION_MASTER_KEY: this.getOptionalString('ENCRYPTION_MASTER_KEY'),
+        ENCRYPTION_KEY_ID: this.getString('ENCRYPTION_KEY_ID', 'default'),
+        REDIS_URL: this.getString('REDIS_URL', 'redis://localhost:6379'),
+        RATE_LIMIT_WINDOW_MS: this.getNumber('RATE_LIMIT_WINDOW_MS', 900000), // 15 minutes
+        RATE_LIMIT_MAX_REQUESTS: this.getNumber('RATE_LIMIT_MAX_REQUESTS', 100),
       };
     } catch (error) {
-      logger.error('Failed to load environment configuration:', error);
+      console.error('Failed to load environment configuration:', error);
       throw error;
     }
   }
@@ -99,6 +138,14 @@ class Environment {
         return defaultValue;
       }
       throw new Error(`Environment variable ${key} is required`);
+    }
+    return value;
+  }
+
+  private getOptionalString(key: string, defaultValue?: string): string | undefined {
+    const value = process.env[key];
+    if (value === undefined) {
+      return defaultValue;
     }
     return value;
   }
@@ -183,6 +230,42 @@ class Environment {
     };
   }
 
+  get email() {
+    return {
+      host: this.config.EMAIL_HOST,
+      port: this.config.EMAIL_PORT,
+      user: this.config.EMAIL_USER,
+      pass: this.config.EMAIL_PASS,
+      from: this.config.EMAIL_FROM,
+      secure: this.config.EMAIL_SECURE,
+    };
+  }
+
+  get webPush() {
+    return {
+      publicKey: this.config.WEB_PUSH_PUBLIC_KEY,
+      privateKey: this.config.WEB_PUSH_PRIVATE_KEY,
+      contact: this.config.WEB_PUSH_CONTACT,
+    };
+  }
+
+  get security() {
+    return {
+      encryptionMasterKey: this.config.ENCRYPTION_MASTER_KEY,
+      encryptionKeyId: this.config.ENCRYPTION_KEY_ID,
+      redisUrl: this.config.REDIS_URL,
+      rateLimitWindowMs: this.config.RATE_LIMIT_WINDOW_MS,
+      rateLimitMaxRequests: this.config.RATE_LIMIT_MAX_REQUESTS,
+    };
+  }
+
+  get encryption() {
+    return {
+      masterKey: this.config.ENCRYPTION_MASTER_KEY,
+      currentKeyId: this.config.ENCRYPTION_KEY_ID,
+    };
+  }
+
   // Method to get all config (for debugging - be careful not to log sensitive data)
   getConfig(includeSensitive: boolean = false): Partial<EnvironmentConfig> {
     const config = { ...this.config };
@@ -192,6 +275,8 @@ class Environment {
       delete (config as any).JWT_SECRET;
       delete (config as any).OPENROUTER_API_KEY;
       delete (config as any).MONGODB_URI;
+      delete (config as any).EMAIL_PASS;
+      delete (config as any).WEB_PUSH_PRIVATE_KEY;
     }
     
     return config;

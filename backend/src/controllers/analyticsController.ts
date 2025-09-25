@@ -6,6 +6,8 @@ import { Dataset } from '../models/Dataset';
 import { IUser } from '../models/User';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { fileUploadService } from '../services/fileUploadService';
+import { openRouterService } from '../services/openRouterService';
+import { notificationService } from '../services/notificationService';
 import { logger } from '../config/logger';
 
 interface AIInsight {
@@ -68,36 +70,81 @@ export const processQuery = asyncHandler(async (req: Request, res: Response): Pr
     await session.save();
   }
 
-  // Process query (placeholder implementation)
+  // Process query using AI
   const startTime = Date.now();
   
-  // Mock AI processing response
-  const mockResponse = {
-    answer: `Based on your query "${query}", I found relevant patterns in the dataset. This is a placeholder response that will be replaced with actual AI processing.`,
-    confidence: 0.85,
-    suggestedActions: [
-      'Create a visualization to better understand the data',
-      'Apply filters to focus on specific segments',
-      'Generate predictive models for forecasting'
-    ]
-  };
+  try {
+    // Get dataset sample for context
+    const dataPreview = await fileUploadService.getFilePreview(dataset.fileId, 10);
+    
+    // Create AI prompt with dataset context
+    const aiPrompt = `You are analyzing a dataset with the following structure and sample data:
 
-  const processingTime = Date.now() - startTime;
+Dataset: ${dataset.name}
+Description: ${dataset.description || 'No description provided'}
+Columns: ${dataset.metadata.headers?.join(', ') || 'Unknown structure'}
+Total rows: ${dataset.metadata.rows || 'Unknown'}
 
-  // Add query to session
-  await session.addQuery(query, mockResponse.answer, processingTime);
+Sample data (first few rows):
+${JSON.stringify(dataPreview.rows, null, 2)}
+
+User query: "${query}"
+
+Please analyze this query in the context of the dataset and provide:
+1. A clear, actionable answer
+2. Insights or patterns you can identify
+3. Suggested next steps for analysis
+4. Any data quality observations
+
+Respond in a structured, professional manner.`;
+
+    const aiResponse = await openRouterService.analyzeText(aiPrompt, 'data-analysis');
+    
+    const processingTime = Date.now() - startTime;
+
+    // Add query to session
+    await session.addQuery(query, aiResponse, processingTime);
+
+    res.json({
+      success: true,
+      data: {
+        sessionId: session._id,
+        response: {
+          answer: aiResponse,
+          processingTime,
+          datasetContext: {
+            name: dataset.name,
+            rows: dataset.metadata.rows,
+            columns: dataset.metadata.columns
+          }
+        }
+      },
+      message: 'Query processed successfully'
+    });
+  } catch (aiError: any) {
+    logger.error('AI processing failed, falling back to basic response:', aiError);
+    
+    // Fallback response if AI fails
+    const fallbackResponse = `I encountered an issue processing your query "${query}" with AI analysis. However, I can confirm that your dataset "${dataset.name}" is available for analysis with ${dataset.metadata.rows || 'unknown'} rows and ${dataset.metadata.columns || 'unknown'} columns. Please try rephrasing your question or check your AI service configuration.`;
+    
+    const processingTime = Date.now() - startTime;
+    await session.addQuery(query, fallbackResponse, processingTime);
+
+    res.json({
+      success: true,
+      data: {
+        sessionId: session._id,
+        response: {
+          answer: fallbackResponse,
+          processingTime,
+          warning: 'AI analysis temporarily unavailable'
+        }
+      },
+      message: 'Query processed with fallback response'
+    });
+  }
 
   logger.info(`Query processed for user ${user.email}: ${query}`);
-
-  res.json({
-    success: true,
-    data: {
-      sessionId: session._id,
-      response: mockResponse,
-      processingTime
-    },
-    message: 'Query processed successfully'
-  });
 });
 
 // Generate predictions
@@ -119,39 +166,138 @@ export const generatePrediction = asyncHandler(async (req: Request, res: Respons
     throw new AppError('Dataset is not ready for analysis', 400);
   }
 
-  // Mock prediction generation
-  const mockPrediction = {
-    type: predictionType,
-    target: targetColumn,
-    predictions: Array.from({ length: horizon || 10 }, (_, i) => ({
-      period: i + 1,
-      value: Math.random() * 100,
-      confidence: 0.8 + Math.random() * 0.15
-    })),
-    confidence: 0.82,
-    metrics: {
-      mse: Math.random() * 10,
-      mae: Math.random() * 5,
-      r_squared: 0.7 + Math.random() * 0.25
-    },
-    horizon: horizon || 10
-  };
-
-  // Add to session if provided
-  if (sessionId) {
-    const session = await AnalysisSession.findById(sessionId);
-    if (session && session.hasAccess(user._id.toString())) {
-      await session.addPrediction(mockPrediction);
+  try {
+    // Get dataset sample for AI analysis
+    const dataPreview = await fileUploadService.getFilePreview(dataset.fileId, 20);
+    
+    if (!targetColumn || !dataPreview || dataPreview.rows.length === 0) {
+      throw new AppError('Unable to analyze dataset for predictions. Please check target column and data availability.', 400);
     }
+
+    // Prepare AI prompt for prediction analysis
+    const aiPrompt = `You are a data scientist analyzing a dataset for predictive modeling.
+
+Dataset: ${dataset.name}
+Target Column: ${targetColumn}
+Prediction Type: ${predictionType}
+Forecast Horizon: ${horizon || 10} periods
+
+Sample data:
+${JSON.stringify(dataPreview.rows.slice(0, 10), null, 2)}
+
+Please analyze this data and provide realistic predictions in the following JSON format:
+{
+  "type": "${predictionType}",
+  "target": "${targetColumn}",
+  "predictions": [
+    {"period": 1, "value": <predicted_value>, "confidence": <0.0-1.0>},
+    // ... continue for ${horizon || 10} periods
+  ],
+  "analysis": "Your analysis of the data patterns and prediction methodology",
+  "confidence": <overall_confidence_0.0-1.0>,
+  "methodology": "Brief description of the prediction approach used",
+  "factors": ["key factors influencing predictions"],
+  "recommendations": ["actionable recommendations based on predictions"]
+}
+
+Base your predictions on actual data patterns, trends, and seasonality you observe. Be realistic and provide genuine confidence scores.`;
+
+    const aiResponse = await openRouterService.analyzeText(aiPrompt, 'data-analysis');
+    
+    // Try to parse AI response as JSON, fallback to structured response
+    let predictionData;
+    try {
+      // Extract JSON from AI response if it contains code blocks
+      const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : aiResponse;
+      if (jsonText) {
+        predictionData = JSON.parse(jsonText);
+      } else {
+        throw new Error('No valid JSON found in AI response');
+      }
+    } catch (parseError) {
+      // If AI doesn't return valid JSON, create structured response
+      predictionData = {
+        type: predictionType,
+        target: targetColumn,
+        predictions: Array.from({ length: horizon || 10 }, (_, i) => ({
+          period: i + 1,
+          value: null,
+          confidence: 0.5
+        })),
+        analysis: aiResponse,
+        confidence: 0.7,
+        methodology: "AI-based pattern analysis",
+        factors: ["Data availability", "Historical patterns"],
+        recommendations: ["Review data quality", "Consider additional features"]
+      };
+    }
+
+    // Add to session if provided
+    if (sessionId) {
+      const session = await AnalysisSession.findById(sessionId);
+      if (session && session.hasAccess(user._id.toString())) {
+        await session.addPrediction(predictionData);
+      }
+    }
+
+    logger.info(`AI prediction generated for user ${user.email}: ${targetColumn}`);
+
+    // Send notification for successful prediction
+    try {
+      await notificationService.createNotification({
+        userId: user._id.toString(),
+        type: 'prediction_ready',
+        title: `Prediction completed for ${dataset.name}`,
+        message: `AI prediction for "${targetColumn}" has been generated with ${(predictionData.confidence * 100).toFixed(0)}% confidence.`,
+        metadata: {
+          datasetId: dataset._id,
+          actionUrl: `/datasets/${dataset._id}/predictions`,
+          relatedData: {
+            datasetName: dataset.name,
+            targetColumn,
+            confidence: predictionData.confidence
+          }
+        },
+        priority: 'normal',
+        channels: ['inApp']
+      });
+    } catch (notificationError) {
+      logger.error('Failed to send prediction notification:', notificationError);
+    }
+
+    res.json({
+      success: true,
+      data: { prediction: predictionData },
+      message: 'AI-powered prediction generated successfully'
+    });
+
+  } catch (aiError: any) {
+    logger.error('AI prediction failed:', aiError);
+    
+    // Fallback: provide basic trend analysis
+    const fallbackPrediction = {
+      type: predictionType,
+      target: targetColumn,
+      predictions: Array.from({ length: horizon || 10 }, (_, i) => ({
+        period: i + 1,
+        value: null,
+        confidence: 0.3
+      })),
+      analysis: `Unable to generate AI predictions for ${targetColumn}. Please check your AI service configuration and data quality.`,
+      confidence: 0.3,
+      methodology: "Fallback analysis",
+      factors: ["Limited AI analysis"],
+      recommendations: ["Check AI service status", "Verify data format"],
+      error: "AI prediction service unavailable"
+    };
+
+    res.json({
+      success: true,
+      data: { prediction: fallbackPrediction },
+      message: 'Prediction generated with limited analysis'
+    });
   }
-
-  logger.info(`Prediction generated for user ${user.email}: ${targetColumn}`);
-
-  res.json({
-    success: true,
-    data: { prediction: mockPrediction },
-    message: 'Prediction generated successfully'
-  });
 });
 
 // Get auto-generated insights for dataset
@@ -173,50 +319,161 @@ export const getInsights = asyncHandler(async (req: Request, res: Response): Pro
     throw new AppError('Dataset is not ready for analysis', 400);
   }
 
-  // Mock insights generation
-  const mockInsights = [
-    {
-      type: 'trend',
-      title: 'Upward Trend Detected',
-      description: 'The data shows a consistent upward trend over the past 6 months with a 15% increase.',
-      confidence: 0.89,
-      supporting_data: {
-        trend_direction: 'up',
-        growth_rate: 0.15,
-        significance: 'high'
-      }
-    },
-    {
-      type: 'anomaly',
-      title: 'Unusual Spike in March',
-      description: 'March data shows values 3 standard deviations above the mean, indicating a potential anomaly.',
-      confidence: 0.92,
-      supporting_data: {
-        deviation: 3.2,
-        affected_period: 'March 2024',
-        impact: 'high'
-      }
-    },
-    {
-      type: 'correlation',
-      title: 'Strong Correlation Found',
-      description: 'Variables A and B show a strong positive correlation (r=0.84), suggesting a relationship.',
-      confidence: 0.84,
-      supporting_data: {
-        correlation_coefficient: 0.84,
-        variables: ['A', 'B'],
-        relationship: 'positive'
-      }
+  try {
+    // Get dataset preview for AI analysis
+    const dataPreview = await fileUploadService.getFilePreview(dataset.fileId, 50);
+    
+    if (!dataPreview || dataPreview.rows.length === 0) {
+      throw new AppError('Unable to analyze dataset for insights. No data available.', 400);
     }
-  ];
 
-  logger.info(`Insights generated for user ${user.email}: dataset ${datasetId}`);
+    // Prepare AI prompt for insights generation
+    const aiPrompt = `You are a data analyst examining a dataset for insights and patterns.
 
-  res.json({
-    success: true,
-    data: { insights: mockInsights },
-    message: 'Insights generated successfully'
-  });
+Dataset: ${dataset.name}
+Description: ${dataset.description || 'No description provided'}
+Columns: ${dataPreview.headers.join(', ')}
+Total rows: ${dataPreview.totalRows}
+
+Sample data (first 20 rows):
+${JSON.stringify(dataPreview.rows.slice(0, 20), null, 2)}
+
+Please analyze this dataset and identify key insights in the following JSON format:
+{
+  "insights": [
+    {
+      "type": "trend|anomaly|correlation|pattern|distribution",
+      "title": "Brief descriptive title",
+      "description": "Detailed explanation of the insight",
+      "confidence": <0.0-1.0>,
+      "supporting_data": {
+        "specific details about the finding"
+      },
+      "importance": "high|medium|low"
+    }
+  ],
+  "summary": "Overall summary of the dataset",
+  "data_quality": {
+    "completeness": <0.0-1.0>,
+    "issues": ["list of data quality issues found"],
+    "recommendations": ["suggested improvements"]
+  },
+  "next_steps": ["recommended analysis steps"]
+}
+
+Focus on:
+1. Identifying trends and patterns
+2. Detecting potential anomalies or outliers
+3. Finding correlations between variables
+4. Assessing data quality
+5. Suggesting actionable insights
+
+Be specific and provide confidence scores based on the strength of evidence in the data.`;
+
+    const aiResponse = await openRouterService.analyzeText(aiPrompt, 'data-analysis');
+    
+    // Try to parse AI response as JSON, fallback to structured response
+    let insightsData;
+    try {
+      // Extract JSON from AI response if it contains code blocks
+      const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonText = jsonMatch && jsonMatch[1] ? jsonMatch[1].trim() : aiResponse.trim();
+      
+      if (jsonText && jsonText.startsWith('{')) {
+        insightsData = JSON.parse(jsonText);
+      } else {
+        throw new Error('No valid JSON found in AI response');
+      }
+    } catch (parseError) {
+      // If AI doesn't return valid JSON, create structured response
+      insightsData = {
+        insights: [
+          {
+            type: 'analysis',
+            title: 'AI Analysis Complete',
+            description: aiResponse,
+            confidence: 0.7,
+            supporting_data: {
+              dataset_name: dataset.name,
+              rows: dataPreview.totalRows,
+              columns: dataPreview.headers.length
+            },
+            importance: 'medium'
+          }
+        ],
+        summary: `Analysis completed for dataset "${dataset.name}" with ${dataPreview.totalRows} rows and ${dataPreview.headers.length} columns.`,
+        data_quality: {
+          completeness: 0.8,
+          issues: ['Unable to parse structured insights from AI'],
+          recommendations: ['Check AI service configuration', 'Review data format']
+        },
+        next_steps: ['Review AI analysis', 'Generate visualizations', 'Apply filters']
+      };
+    }
+
+    logger.info(`AI insights generated for user ${user.email}: dataset ${datasetId}`);
+
+    // Send notification for insights completion
+    try {
+      await notificationService.createNotification({
+        userId: user._id.toString(),
+        type: 'analysis_complete',
+        title: `Insights generated for ${dataset.name}`,
+        message: `AI analysis found ${insightsData.insights?.length || 0} key insights for your dataset.`,
+        metadata: {
+          datasetId: dataset._id,
+          actionUrl: `/datasets/${dataset._id}/insights`,
+          relatedData: {
+            datasetName: dataset.name,
+            insightCount: insightsData.insights?.length || 0
+          }
+        },
+        priority: 'normal',
+        channels: ['inApp']
+      });
+    } catch (notificationError) {
+      logger.error('Failed to send insights notification:', notificationError);
+    }
+
+    res.json({
+      success: true,
+      data: insightsData,
+      message: 'AI-powered insights generated successfully'
+    });
+
+  } catch (aiError: any) {
+    logger.error('AI insights generation failed:', aiError);
+    
+    // Fallback insights
+    const fallbackInsights = {
+      insights: [
+        {
+          type: 'system',
+          title: 'Analysis Unavailable',
+          description: `Unable to generate AI insights for dataset "${dataset.name}". The AI service may be temporarily unavailable.`,
+          confidence: 0.1,
+          supporting_data: {
+            error: 'AI service unavailable',
+            dataset_id: datasetId
+          },
+          importance: 'low'
+        }
+      ],
+      summary: 'AI analysis could not be completed at this time.',
+      data_quality: {
+        completeness: 0.0,
+        issues: ['AI service unavailable'],
+        recommendations: ['Check service status', 'Try again later']
+      },
+      next_steps: ['Verify AI configuration', 'Retry analysis', 'Use manual analysis']
+    };
+
+    res.json({
+      success: true,
+      data: fallbackInsights,
+      message: 'Insights generated with limited analysis'
+    });
+  }
 });
 
 // Get recommendations based on analysis
@@ -234,53 +491,165 @@ export const getRecommendations = asyncHandler(async (req: Request, res: Respons
     throw new AppError('Access denied to dataset', 403);
   }
 
-  // Mock recommendations generation
-  const mockRecommendations = [
-    {
-      title: 'Create Time Series Visualization',
-      description: 'Based on your temporal data, a time series chart would help identify patterns and trends.',
-      priority: 'high',
-      category: 'visualization',
-      reasoning: 'Your dataset contains date columns with regular intervals, perfect for time series analysis.',
-      actions: [
-        'Select date column as X-axis',
-        'Choose numeric columns for Y-axis',
-        'Apply smoothing if needed'
-      ]
-    },
-    {
-      title: 'Apply Seasonal Decomposition',
-      description: 'Your data shows seasonal patterns that could be analyzed separately.',
-      priority: 'medium',
-      category: 'analysis',
-      reasoning: 'Seasonal patterns detected in the data suggest decomposition could reveal underlying trends.',
-      actions: [
-        'Identify seasonal period',
-        'Decompose into trend, season, and residual',
-        'Analyze each component separately'
-      ]
-    },
-    {
-      title: 'Set Up Anomaly Detection',
-      description: 'Implement automated anomaly detection to catch unusual patterns.',
-      priority: 'medium',
-      category: 'monitoring',
-      reasoning: 'Historical data shows occasional outliers that would benefit from automated detection.',
-      actions: [
-        'Define normal behavior baseline',
-        'Set threshold levels',
-        'Configure alert mechanisms'
-      ]
+  try {
+    // Get dataset preview for AI-powered recommendations
+    const dataPreview = await fileUploadService.getFilePreview(dataset.fileId, 30);
+    
+    if (!dataPreview || dataPreview.rows.length === 0) {
+      throw new AppError('Unable to generate recommendations. No data available.', 400);
     }
-  ];
 
-  logger.info(`Recommendations generated for user ${user.email}: dataset ${datasetId}`);
+    // Prepare AI prompt for recommendations
+    const aiPrompt = `You are an expert data analyst providing actionable recommendations for a dataset analysis.
 
-  res.json({
-    success: true,
-    data: { recommendations: mockRecommendations },
-    message: 'Recommendations generated successfully'
-  });
+Dataset: ${dataset.name}
+Description: ${dataset.description || 'No description provided'}
+Columns: ${dataPreview.headers.join(', ')}
+Total rows: ${dataPreview.totalRows}
+User Context: ${context || 'General analysis'}
+User Goals: ${goals || 'Understand data and find insights'}
+
+Sample data (first 15 rows):
+${JSON.stringify(dataPreview.rows.slice(0, 15), null, 2)}
+
+Please analyze this dataset and provide actionable recommendations in the following JSON format:
+{
+  "recommendations": [
+    {
+      "title": "Clear, actionable recommendation title",
+      "description": "Detailed explanation of what to do and why",
+      "priority": "high|medium|low",
+      "category": "visualization|analysis|data_cleaning|modeling|monitoring",
+      "reasoning": "Why this recommendation is relevant for this dataset",
+      "actions": ["step 1", "step 2", "step 3"],
+      "expected_outcome": "What the user can expect to achieve",
+      "difficulty": "easy|medium|hard",
+      "estimated_time": "time estimate to complete"
+    }
+  ],
+  "analysis_strategy": "Overall approach recommended for this dataset",
+  "data_quality_notes": ["observations about data quality"],
+  "visualization_suggestions": ["specific chart types that would work well"],
+  "next_immediate_steps": ["first 3 things the user should do"]
+}
+
+Focus on:
+1. Practical, actionable recommendations
+2. Visualization suggestions appropriate for the data
+3. Data quality improvements
+4. Analysis techniques suited to this dataset
+5. Business/research value that can be extracted
+
+Make recommendations specific to the actual data structure and content you observe.`;
+
+    const aiResponse = await openRouterService.analyzeText(aiPrompt, 'data-analysis');
+    
+    // Try to parse AI response as JSON, fallback to structured response
+    let recommendationsData;
+    try {
+      // Extract JSON from AI response if it contains code blocks
+      const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonText = jsonMatch && jsonMatch[1] ? jsonMatch[1].trim() : aiResponse.trim();
+      
+      if (jsonText && jsonText.startsWith('{')) {
+        recommendationsData = JSON.parse(jsonText);
+      } else {
+        throw new Error('No valid JSON found in AI response');
+      }
+    } catch (parseError) {
+      // If AI doesn't return valid JSON, create structured response
+      recommendationsData = {
+        recommendations: [
+          {
+            title: 'AI Analysis and Exploration',
+            description: aiResponse,
+            priority: 'medium',
+            category: 'analysis',
+            reasoning: `Based on analysis of dataset "${dataset.name}" with ${dataPreview.totalRows} rows and ${dataPreview.headers.length} columns`,
+            actions: [
+              'Review the AI analysis above',
+              'Identify key columns for analysis',
+              'Create appropriate visualizations',
+              'Apply data cleaning if needed'
+            ],
+            expected_outcome: 'Better understanding of data patterns and structure',
+            difficulty: 'medium',
+            estimated_time: '30-60 minutes'
+          }
+        ],
+        analysis_strategy: 'AI-guided exploratory data analysis',
+        data_quality_notes: ['AI analysis completed but structured output parsing failed'],
+        visualization_suggestions: ['Start with basic charts to understand data distribution'],
+        next_immediate_steps: [
+          'Review columns and data types',
+          'Check for missing values',
+          'Create summary statistics'
+        ]
+      };
+    }
+
+    logger.info(`AI recommendations generated for user ${user.email}: dataset ${datasetId}`);
+
+    res.json({
+      success: true,
+      data: recommendationsData,
+      message: 'AI-powered recommendations generated successfully'
+    });
+
+  } catch (aiError: any) {
+    logger.error('AI recommendations generation failed:', aiError);
+    
+    // Fallback recommendations
+    const fallbackRecommendations = {
+      recommendations: [
+        {
+          title: 'Basic Data Exploration',
+          description: `Start with basic exploration of your dataset "${dataset.name}". AI recommendations are temporarily unavailable.`,
+          priority: 'high',
+          category: 'analysis',
+          reasoning: 'Essential first step for any data analysis project',
+          actions: [
+            'Review column names and types',
+            'Check data completeness',
+            'Generate summary statistics',
+            'Identify potential issues'
+          ],
+          expected_outcome: 'Understanding of data structure and quality',
+          difficulty: 'easy',
+          estimated_time: '15-30 minutes'
+        },
+        {
+          title: 'Create Initial Visualizations',
+          description: 'Generate basic charts to understand data distribution and patterns.',
+          priority: 'medium',
+          category: 'visualization',
+          reasoning: 'Visual exploration helps identify patterns quickly',
+          actions: [
+            'Create histograms for numeric columns',
+            'Generate bar charts for categorical data',
+            'Plot correlation matrices if applicable'
+          ],
+          expected_outcome: 'Visual insights into data patterns',
+          difficulty: 'easy',
+          estimated_time: '20-40 minutes'
+        }
+      ],
+      analysis_strategy: 'Start with basic exploration and visualization',
+      data_quality_notes: ['AI service temporarily unavailable'],
+      visualization_suggestions: ['Histograms', 'Bar charts', 'Scatter plots'],
+      next_immediate_steps: [
+        'Check AI service configuration',
+        'Begin manual exploration',
+        'Create basic visualizations'
+      ]
+    };
+
+    res.json({
+      success: true,
+      data: fallbackRecommendations,
+      message: 'Recommendations generated with basic analysis'
+    });
+  }
 });
 
 // Get user's analysis sessions

@@ -17,6 +17,8 @@ import analyticsRoutes from './routes/analytics';
 import collaborationRoutes from './routes/collaboration';
 import aiRoutes from './routes/ai';
 import dashboardRoutes from './routes/dashboard';
+import notificationRoutes from './routes/notifications';
+import { securityRoutes } from './routes/securityRoutes';
 
 // Load environment variables
 logger.info('Loading environment configuration...');
@@ -64,6 +66,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/collaboration', collaborationRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/security', securityRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,9 +89,22 @@ declare global {
 
 // Initialize socket service after server creation
 function initializeSocketService() {
-  socketService = new SocketService(server);
-  global.socketService = socketService;
-  return socketService;
+  const socketSvc = new SocketService();
+  // Initialize the socket service with the server
+  (socketSvc as any).io = new (require('socket.io').Server)(server, {
+    cors: {
+      origin: env.cors.frontendUrl,
+      methods: ['GET', 'POST'],
+      credentials: true
+    }
+  });
+  
+  // Setup middleware and event handlers
+  (socketSvc as any).setupMiddleware();
+  (socketSvc as any).setupEventHandlers();
+  
+  global.socketService = socketSvc;
+  return socketSvc;
 }
 
 // Start server
