@@ -154,6 +154,10 @@ Authorization: Bearer {{authToken}}
 
 ### 7. Share Dataset
 **Description**: Grant access to a dataset for another user with specified permissions.
+**Available Permissions:**
+- `"read"` - View dataset and basic information
+- `"write"` - View and modify dataset metadata
+- `"admin"` - Full control including sharing and deletion
 ```http
 POST {{baseUrl}}/datasets/[DATASET_ID]/share
 Authorization: Bearer {{authToken}}
