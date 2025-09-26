@@ -19,6 +19,8 @@ This repository contains a TypeScript-based Node.js backend with the following k
 - Configuration via environment variables (dotenv).
 - Testing with Jest, ts-jest, Supertest, and mongodb-memory-server.
 
+For developers: see the Developer Guide at DEVELOPER_GUIDE.md for architecture, onboarding, conventions, and how to add new features.
+
 ## Tech Stack
 - Language: TypeScript
 - Runtime: Node.js (CommonJS output; tsconfig outDir dist)
@@ -180,7 +182,6 @@ This README reflects the current repository state based on source files and pack
 TODOs:
 - Document deployment (Dockerfile/CI/CD) if/when available.
 - Provide API reference (OpenAPI/Swagger) or link to Postman collection.
-- Add .env.example file to the repo for easier onboarding.
 
 ## License
 This project is licensed under the ISC License (see package.json).
