@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { OTPVerification, IOTPVerification } from '../models/OTPVerification';
-import { emailService } from './emailService';
+import { EmailService } from './emailService';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
 
@@ -42,7 +42,15 @@ class OTPService {
       email = email.toLowerCase();
 
       // Check if there's a recent OTP that's still valid
-      const existingOTP = await OTPVerification.findLatestByEmail(email, type);
+
+          // Find latest OTP for this email and type
+          const existingOTP = await OTPVerification.findOne({
+            email,
+            type,
+            isUsed: false,
+            expiresAt: { $gt: new Date() }
+          }).sort({ createdAt: -1 });
+
       if (existingOTP) {
         const timeDiff = Date.now() - existingOTP.createdAt.getTime();
         const cooldownMs = this.RESEND_COOLDOWN_MINUTES * 60 * 1000;
@@ -81,7 +89,7 @@ class OTPService {
       await otpRecord.save();
 
       // Send OTP via email
-      const emailSent = await emailService.sendOTPEmail(email, otp, firstName);
+      const emailSent = await EmailService.sendOTPEmail(email, otp, firstName);
 
       if (!emailSent) {
         // If email sending fails, mark OTP as used to prevent misuse
@@ -194,132 +202,15 @@ class OTPService {
   }> {
     try {
       email = email.toLowerCase();
-import crypto from 'crypto';
-import { logger } from '../config/logger';
 
-interface OTPData {
-  code: string;
-  email: string;
-  expiresAt: Date;
-  attempts: number;
-}
+      // Find latest OTP for this email and type
+      const existingOTP = await OTPVerification.findOne({
+        email,
+        type,
+        isUsed: false,
+        expiresAt: { $gt: new Date() }
+      }).sort({ createdAt: -1 });
 
-// In-memory storage for OTPs (in production, use Redis or database)
-const otpStore = new Map<string, OTPData>();
-
-// Clean expired OTPs every 5 minutes
-setInterval(() => {
-  const now = new Date();
-  for (const [key, otpData] of otpStore.entries()) {
-    if (otpData.expiresAt < now) {
-      otpStore.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
-
-export class OTPService {
-  private static readonly OTP_LENGTH = 6;
-  private static readonly OTP_EXPIRY_MINUTES = 10;
-  private static readonly MAX_ATTEMPTS = 3;
-
-  /**
-   * Generate a new OTP for the given email
-   */
-  static generateOTP(email: string): string {
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const otpData: OTPData = {
-      code: otp,
-      email: email.toLowerCase(),
-      expiresAt: new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000),
-      attempts: 0
-    };
-
-    // Store OTP with email as key
-    otpStore.set(email.toLowerCase(), otpData);
-
-    logger.info(`OTP generated for email: ${email}`);
-    return otp;
-  }
-
-  /**
-   * Verify OTP for the given email
-   */
-  static verifyOTP(email: string, providedOTP: string): { success: boolean; message: string } {
-    const normalizedEmail = email.toLowerCase();
-    const otpData = otpStore.get(normalizedEmail);
-
-    if (!otpData) {
-      return { success: false, message: 'OTP not found or expired' };
-    }
-
-    // Check if OTP has expired
-    if (otpData.expiresAt < new Date()) {
-      otpStore.delete(normalizedEmail);
-      return { success: false, message: 'OTP has expired' };
-    }
-
-    // Check if max attempts reached
-    if (otpData.attempts >= this.MAX_ATTEMPTS) {
-      otpStore.delete(normalizedEmail);
-      return { success: false, message: 'Maximum OTP attempts reached' };
-    }
-
-    // Increment attempts
-    otpData.attempts++;
-
-    // Verify OTP
-    if (otpData.code === providedOTP.trim()) {
-      otpStore.delete(normalizedEmail);
-      logger.info(`OTP verified successfully for email: ${email}`);
-      return { success: true, message: 'OTP verified successfully' };
-    }
-
-    return { success: false, message: 'Invalid OTP' };
-  }
-
-  /**
-   * Check if OTP exists and is still valid for the given email
-   */
-  static hasValidOTP(email: string): boolean {
-    const normalizedEmail = email.toLowerCase();
-    const otpData = otpStore.get(normalizedEmail);
-
-    if (!otpData) {
-      return false;
-    }
-
-    if (otpData.expiresAt < new Date()) {
-      otpStore.delete(normalizedEmail);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Remove OTP for the given email
-   */
-  static clearOTP(email: string): void {
-    otpStore.delete(email.toLowerCase());
-  }
-
-  /**
-   * Get remaining attempts for OTP
-   */
-  static getRemainingAttempts(email: string): number {
-    const normalizedEmail = email.toLowerCase();
-    const otpData = otpStore.get(normalizedEmail);
-
-    if (!otpData || otpData.expiresAt < new Date()) {
-      return 0;
-    }
-
-    return Math.max(0, this.MAX_ATTEMPTS - otpData.attempts);
-  }
-}
-      const existingOTP = await OTPVerification.findLatestByEmail(email, type);
       if (!existingOTP) {
         return { canRequest: true };
       }
@@ -351,7 +242,13 @@ export class OTPService {
    */
   async cleanupExpiredOTPs(): Promise<number> {
     try {
-      const result = await OTPVerification.cleanupExpired();
+      const result = await OTPVerification.deleteMany({
+        $or: [
+          { expiresAt: { $lt: new Date() } },
+          { isUsed: true },
+          { attempts: { $gte: 5 } }
+        ]
+      });
       logger.info(`Cleaned up ${result.deletedCount} expired OTP records`);
       return result.deletedCount || 0;
     } catch (error) {

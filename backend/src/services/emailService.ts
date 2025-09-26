@@ -1,7 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { logger } from '../config/logger';
-import nodemailer from 'nodemailer';
-import { logger } from '../config/logger';
 
 export class EmailService {
   private static transporter: nodemailer.Transporter;
@@ -16,7 +14,7 @@ export class EmailService {
     }
 
     try {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: parseInt(process.env.EMAIL_PORT || '587'),
         secure: process.env.EMAIL_SECURE === 'true',
@@ -85,7 +83,7 @@ export class EmailService {
               <p>If you didn't request this verification, please ignore this email.</p>
             </div>
             <div class="footer">
-              <p>&copy; 2024 ${siteName}. All rights reserved.</p>
+              <p>&copy; 2025 ${siteName}. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
             </div>
           </div>
@@ -106,7 +104,7 @@ Security Note: Never share this code with anyone. ${siteName} will never ask for
 
 If you didn't request this verification, please ignore this email.
 
-© 2024 ${siteName}. All rights reserved.
+© 2025 ${siteName}. All rights reserved.
 This is an automated message, please do not reply to this email.
     `;
 
@@ -175,7 +173,7 @@ This is an automated message, please do not reply to this email.
               <p>Thank you for joining us!</p>
             </div>
             <div class="footer">
-              <p>&copy; 2024 ${siteName}. All rights reserved.</p>
+              <p>&copy; 2025 ${siteName}. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -198,125 +196,7 @@ This is an automated message, please do not reply to this email.
     }
   }
 }
-export interface EmailOptions {
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-}
 
-class EmailService {
-  private transporter: Transporter;
-  private isConfigured: boolean = false;
-
-  constructor() {
-    this.initializeTransporter();
-  }
-
-  private initializeTransporter(): void {
-    try {
-      // Check if email configuration exists
-      const emailConfig = {
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT || '587'),
-        secure: process.env.EMAIL_SECURE === 'true',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      };
-
-      // Only create transporter if config is available
-      if (emailConfig.host && emailConfig.auth.user && emailConfig.auth.pass) {
-        this.transporter = nodemailer.createTransporter(emailConfig);
-        this.isConfigured = true;
-        logger.info('Email service configured successfully');
-      } else {
-        logger.warn('Email service not configured - missing environment variables');
-        this.isConfigured = false;
-      }
-    } catch (error) {
-      logger.error('Failed to configure email service:', error);
-      this.isConfigured = false;
-    }
-  }
-
-  async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.isConfigured) {
-      logger.warn('Email service not configured, skipping email send');
-      return false;
-    }
-
-    try {
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || 'ClarifAI <noreply@clarifai.com>',
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      logger.info(`Email sent successfully to ${options.to}: ${result.messageId}`);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to send email to ${options.to}:`, error);
-      return false;
-    }
-  }
-
-  async sendOTPEmail(email: string, otp: string, firstName: string): Promise<boolean> {
-    const subject = 'ClarifAI - Email Verification';
-    const text = `Hello ${firstName},\n\nYour verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this verification, please ignore this email.\n\nBest regards,\nClarifAI Team`;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Email Verification</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; }
-          .otp-code { font-size: 32px; font-weight: bold; color: #2563eb; text-align: center; background: white; padding: 20px; border-radius: 5px; margin: 20px 0; letter-spacing: 3px; }
-          .footer { text-align: center; margin-top: 20px; font-size: 14px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>ClarifAI</h1>
-            <h2>Email Verification</h2>
-          </div>
-          <div class="content">
-            <p>Hello <strong>${firstName}</strong>,</p>
-            <p>Welcome to ClarifAI! Please verify your email address by entering the following verification code:</p>
-            <div class="otp-code">${otp}</div>
-            <p><strong>This code will expire in 10 minutes.</strong></p>
-            <p>If you didn't create an account with ClarifAI, please ignore this email.</p>
-            <p>Best regards,<br>The ClarifAI Team</p>
-          </div>
-          <div class="footer">
-            <p>This is an automated email. Please do not reply to this message.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    return this.sendEmail({
-      to: email,
-      subject,
-      text,
-      html,
-    });
-  }
-
-  isEmailConfigured(): boolean {
-    return this.isConfigured;
-  }
-}
-
-export const emailService = new EmailService();
+// Create and export singleton instance
+const emailService = new EmailService();
+export { emailService };

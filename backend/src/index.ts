@@ -23,12 +23,16 @@ import { securityRoutes } from './routes/securityRoutes';
 // Load environment variables
 logger.info('Loading environment configuration...');
 logger.debug('Environment config loaded:', env.getConfig(false));
+import { EmailService } from './services/emailService';
 
 const app = express();
 const server = createServer(app);
 let socketService: SocketService;
 
 const PORT = env.server.port;
+
+// Initialize Email Service
+EmailService.initialize();
 
 // Rate limiting
 const limiter = rateLimit({

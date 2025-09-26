@@ -46,6 +46,37 @@ Content-Type: application/json
 
 **Response**: Save the `token` from response to `authToken` environment variable.
 
+### Verify Email OTP
+Description: Verify the 6-digit OTP sent to the user's email to activate the account.
+```http
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "otp": "123456"
+}
+```
+
+Response: On success, returns a user object and a JWT token. Use the token to authenticate subsequent requests.
+
+### Resend Verification OTP
+Description: Resend a new 6-digit OTP to the user's email. Subject to cooldown limits.
+```http
+POST {{baseUrl}}/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+```
+
+Notes:
+- OTP is valid for 10 minutes.
+- You can request a new OTP every 2 minutes (cooldown).
+- Maximum of 5 verification attempts per OTP.
+- Login will fail if the email is not yet verified and will automatically trigger a resend of the OTP.
+
 ### 3. Logout User
 **Description**: Invalidate the current JWT token and end user session.
 ```http

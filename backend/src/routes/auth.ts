@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   register,
+  verifyOTP,
+  resendOTP,
   login,
   logout,
   getProfile,
@@ -8,30 +10,24 @@ import {
   changePassword,
   searchUsers,
   validateRegister,
+  validateVerifyOTP,
+  validateResendOTP,
   validateLogin,
   validateUpdateProfile,
   validateChangePassword,
   handleValidationErrors
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
-import { requirePermission } from '../middleware/rbac';
+import {requirePermission} from "../middleware/rbac";
 
 const router = Router();
 
 // Public routes
-router.post('/register', 
-  validateRegister, 
-  handleValidationErrors, 
-  register
-);
-
-router.post('/login', 
-  validateLogin, 
-  handleValidationErrors, 
-  login
-);
-
-// Protected routes
+router.post('/register', validateRegister, handleValidationErrors, register);
+router.post('/verify-otp', validateVerifyOTP, handleValidationErrors, verifyOTP);
+router.post('/resend-otp', validateResendOTP, handleValidationErrors, resendOTP);
+router.post('/login', validateLogin, handleValidationErrors, login);
+// Protected routes  
 router.post('/logout', 
   authenticate, 
   logout

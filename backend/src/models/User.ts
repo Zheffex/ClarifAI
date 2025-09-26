@@ -12,15 +12,18 @@ export interface IUser extends Document {
   preferences: Record<string, any>;
   lastLogin?: Date;
   isActive: boolean;
+  isEmailVerified: boolean;
+  emailVerifiedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Virtual properties
   fullName: string;
-  
+
   // Instance methods
   comparePassword(candidatePassword: string): Promise<boolean>;
   updateLastLogin(): Promise<void>;
+  markEmailAsVerified(): Promise<void>;
 }
 
 const userSchema = new Schema<IUser>({
@@ -85,6 +88,15 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: true,
     required: true
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+    required: true
+  },
+  emailVerifiedAt: {
+    type: Date,
+    required: false
   }
 }, {
   timestamps: true, // Automatically adds createdAt and updatedAt
@@ -109,6 +121,7 @@ userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ organizationId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
+userSchema.index({ isEmailVerified: 1 });
 userSchema.index({ createdAt: -1 });
 
 // Pre-save middleware to hash password
@@ -133,6 +146,14 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 // Instance method to update last login
 userSchema.methods.updateLastLogin = async function(): Promise<void> {
   this.lastLogin = new Date();
+  await this.save();
+};
+
+// Instance method to mark email as verified
+userSchema.methods.markEmailAsVerified = async function(): Promise<void> {
+  this.isEmailVerified = true;
+  this.emailVerifiedAt = new Date();
+  this.isActive = true; // Activate user when email is verified
   await this.save();
 };
 

@@ -4,6 +4,8 @@ import { User, IUser } from '../models/User';
 import { generateToken } from '../middleware/auth';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
+import { otpService } from '../services/otpService';
+import { EmailService } from '../services/emailService';
 
 // Register user
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -12,7 +14,23 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
   // Check if user already exists
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
-    throw new AppError('User with this email already exists', 400);
+    if (existingUser.isEmailVerified) {
+      throw new AppError('User with this email already exists', 400);
+    } else {
+      // User exists but email not verified - we can send a new OTP
+      const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification');
+
+      res.status(200).json({
+        success: true,
+        data: {
+          emailSent: otpResult.success,
+          canResend: otpResult.canResend,
+          nextResendTime: otpResult.nextResendTime
+        },
+        message: 'Account exists but not verified. A new verification code has been sent to your email.'
+      });
+      return;
+    }
   }
 
   // Prevent admin role assignment during registration
@@ -20,7 +38,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     throw new AppError('Admin role cannot be assigned during registration', 400);
   }
 
-  // Create new user
+  // Create new user (inactive until email verified)
   const user = new User({
     email: email.toLowerCase(),
     passwordHash: password, // Will be hashed by pre-save middleware
@@ -28,13 +46,59 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     lastName,
     role: role || 'viewer',
     preferences: {},
-    isActive: true
+    isActive: false, // User starts inactive
+    isEmailVerified: false
   });
 
   await user.save();
 
-  // Generate token
+  // Generate and send OTP
+  const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification');
+
+  logger.info(`New user registered (pending verification): ${user.email}`);
+
+  res.status(201).json({
+    success: true,
+    data: {
+      userId: user._id,
+      email: user.email,
+      emailSent: otpResult.success,
+      canResend: otpResult.canResend,
+      nextResendTime: otpResult.nextResendTime
+    },
+    message: 'Registration successful! Please check your email for the verification code.'
+  });
+});
+
+// Verify OTP - Step 2: Complete registration
+export const verifyOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email, otp } = req.body;
+
+  // Find user
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Check if email already verified
+  if (user.isEmailVerified) {
+    throw new AppError('Email already verified', 400);
+  }
+
+  // Verify OTP
+  const verificationResult = await otpService.verifyOTP(email, otp);
+  if (!verificationResult.success) {
+    throw new AppError(verificationResult.message, 400);
+  }
+
+  // Mark email as verified and activate user
+  await user.markEmailAsVerified();
+
+  // Generate token for the verified user
   const token = generateToken(user);
+
+  // Send welcome email
+  await EmailService.sendWelcomeEmail(user.email, user.firstName);
 
   // Remove password from response
   const userResponse = {
@@ -42,23 +106,61 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
+    fullName: user.fullName,
     role: user.role,
     organizationId: user.organizationId,
     preferences: user.preferences,
     isActive: user.isActive,
+    isEmailVerified: user.isEmailVerified,
+    emailVerifiedAt: user.emailVerifiedAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
 
-  logger.info(`New user registered: ${user.email}`);
+  logger.info(`Email verified and user activated: ${user.email}`);
 
-  res.status(201).json({
+  res.status(200).json({
     success: true,
     data: {
       user: userResponse,
       token
     },
-    message: 'User registered successfully'
+    message: 'Email verified successfully! Welcome to ClarifAI.'
+  });
+});
+
+// Resend OTP
+export const resendOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body;
+
+  // Find user
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Check if email already verified
+  if (user.isEmailVerified) {
+    throw new AppError('Email already verified', 400);
+  }
+
+  // Generate and send new OTP
+  const otpResult = await otpService.generateAndSendOTP(email, user.firstName, 'email_verification');
+
+  if (!otpResult.success) {
+    throw new AppError(otpResult.message, 500);
+  }
+
+  logger.info(`OTP resent to: ${email}`);
+
+  res.status(200).json({
+    success: true,
+    message: 'Verification code sent to your email.',
+    data: {
+      email: email.toLowerCase(),
+      canResend: otpResult.canResend,
+      nextResendTime: otpResult.nextResendTime
+    }
   });
 });
 
@@ -70,6 +172,14 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
   const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
   if (!user) {
     throw new AppError('Invalid credentials', 401);
+  }
+
+  // Check if email is verified
+  if (!user.isEmailVerified) {
+    // Resend OTP if user exists but email not verified
+    const otpResult = await otpService.generateAndSendOTP(email, user.firstName, 'email_verification');
+
+    throw new AppError('Please verify your email first. We have sent a new verification code to your email.', 401);
   }
 
   // Check if user is active
@@ -284,7 +394,25 @@ export const searchUsers = asyncHandler(async (req: Request, res: Response): Pro
   });
 });
 
-// Validation rules
+// Validation rules for OTP verification
+export const validateVerifyOTP = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage('OTP must be a 6-digit number')
+];
+
+export const validateResendOTP = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email')
+];
+
 // Validation rules
 export const validateRegister = [
   body('email')
