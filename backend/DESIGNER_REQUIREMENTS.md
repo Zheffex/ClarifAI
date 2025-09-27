@@ -225,6 +225,7 @@ This document outlines the complete design requirements for the ClarifAI platfor
 
 ### 6. 🔔 Notification System
 
+
 #### **Notification Center**
 - **Notification List**
   - Chronological notification feed
@@ -236,14 +237,25 @@ This document outlines the complete design requirements for the ClarifAI platfor
 - **Notification Preferences**
   - Notification type toggles
   - Frequency settings
-  - Email vs in-app preferences
+  - Email, in-app, and web push preferences
   - Do not disturb mode
+  - Enable/disable browser push notifications
+  - Permission prompt UI for browser notifications
+
+- **Web Push Notification Support**
+  - Real-time push notifications delivered via browser
+  - Permission request and fallback for unsupported browsers
+  - Cross-device notification delivery (desktop/mobile)
+  - Push notification settings panel
+  - Push notification opt-in/out flow
+  - UI for denied/blocked permission states
 
 - **Real-time Notification Toast**
   - Pop-up notifications (top-right corner)
   - Auto-dismiss timer
   - Action buttons (dismiss, view)
   - Different styles for different types
+  - Support for browser push notification appearance
 
 #### **Monitoring & Anomaly Detection**
 - **Anomaly Detection Dashboard**
@@ -376,12 +388,14 @@ This document outlines the complete design requirements for the ClarifAI platfor
 - **Loading State**: Skeleton screens or spinners
 - **Error State**: Clear error indication with recovery options
 
+
 ### Animation & Micro-interactions
 - **Page Transitions**: Smooth, fast transitions (200-300ms)
 - **Loading States**: Progress indicators, skeleton screens
 - **Hover Effects**: Subtle animations on interactive elements
 - **Real-time Updates**: Smooth appearance of new content
 - **Drag & Drop**: Visual feedback during file operations
+- **Web Push Notification Interactions**: Animated permission prompts, notification arrival animations, feedback for permission changes
 
 ### Data Visualization Requirements
 - **Chart Libraries**: Recommend Chart.js, D3.js, or Recharts
@@ -394,12 +408,14 @@ This document outlines the complete design requirements for the ClarifAI platfor
 
 ## 📱 Mobile Considerations
 
+
 ### Mobile-Specific Features
 - **Touch-Optimized**: Minimum 44px touch targets
 - **Gesture Support**: Swipe navigation where appropriate
 - **Mobile File Upload**: Camera integration for document capture
 - **Offline Capability**: Basic functionality when offline
 - **Progressive Web App**: Add to home screen functionality
+- **Mobile Push Notification Support**: Push notification permission flow and delivery for mobile browsers and PWA
 
 ### Mobile Layout Adaptations
 - **Collapsible Navigation**: Hamburger menu for small screens
@@ -510,21 +526,25 @@ This document outlines the complete design requirements for the ClarifAI platfor
 
 ## 💡 Additional Considerations
 
+
 ### Performance Optimization
 - **Lazy Loading**: Load components and data as needed
 - **Image Optimization**: Proper image formats and compression
 - **Code Splitting**: Separate bundles for different features
 - **Caching Strategy**: Optimize data and asset caching
+- **Efficient Push Delivery**: Minimize payload size and optimize push notification delivery for speed and reliability
 
 ### Internationalization
 - **Text Externalization**: Prepare for multiple languages
 - **RTL Support**: Consider right-to-left language support
 - **Cultural Considerations**: Adapt UI patterns for different regions
 
+
 ### Data Privacy & Compliance
 - **GDPR Compliance**: Data handling and user consent interfaces
 - **Privacy Controls**: User data management interfaces
 - **Audit Trail**: Clear logging and tracking interfaces
+- **Push Notification Consent**: Explicit opt-in for web push, clear permission management, and privacy documentation for notification data
 
 ---
 

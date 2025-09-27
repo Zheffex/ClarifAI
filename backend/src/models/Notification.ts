@@ -172,8 +172,7 @@ const notificationSchema = new Schema<INotification>({
     index: true
   },
   expiresAt: {
-    type: Date,
-    index: true
+    type: Date
   }
 }, {
   timestamps: true,
@@ -191,6 +190,7 @@ const notificationSchema = new Schema<INotification>({
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ type: 1, status: 1 });
 notificationSchema.index({ scheduledFor: 1, status: 1 });
+// expiresAt index with TTL (expireAfterSeconds is only supported in separate index)
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 notificationSchema.index({ 'channels.inApp.read': 1, userId: 1 });
 

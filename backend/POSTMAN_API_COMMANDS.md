@@ -710,6 +710,83 @@ GET {{baseUrl}}/notifications/monitoring/datasets/[DATASET_ID]/rules
 Authorization: Bearer {{authToken}}
 ```
 
+### 15. Test Web Push Notification
+**Description**: Test web push notification functionality to verify VAPID keys and push service configuration.
+```http
+POST {{baseUrl}}/notifications/test-webpush
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Test Web Push",
+  "message": "This is a test web push notification",
+  "url": "http://localhost:3000/dashboard",
+  "icon": "http://localhost:3000/icon.png",
+  "badge": "http://localhost:3000/badge.png"
+}
+```
+
+### 16. Subscribe to Push Notifications
+**Description**: Subscribe a client device to receive push notifications using browser service worker.
+```http
+POST {{baseUrl}}/notifications/push/subscribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "subscription": {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/example-endpoint",
+    "keys": {
+      "p256dh": "example-p256dh-key",
+      "auth": "example-auth-key"
+    }
+  },
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+}
+```
+
+### 17. Unsubscribe from Push Notifications
+**Description**: Remove a push notification subscription for the current user.
+```http
+DELETE {{baseUrl}}/notifications/push/unsubscribe
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "endpoint": "https://fcm.googleapis.com/fcm/send/example-endpoint"
+}
+```
+
+### 18. Get Push Subscription Status
+**Description**: Check the current push notification subscription status for the authenticated user.
+```http
+GET {{baseUrl}}/notifications/push/status
+Authorization: Bearer {{authToken}}
+```
+
+### 19. Send Test Push to User
+**Description**: Send a test push notification to a specific user (admin only).
+```http
+POST {{baseUrl}}/notifications/push/send-test/[USER_ID]
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Admin Test Push",
+  "message": "This is an admin test push notification",
+  "data": {
+    "url": "/dashboard",
+    "action": "view"
+  }
+}
+```
+
+### 20. Get VAPID Public Key
+**Description**: Retrieve the VAPID public key needed for client-side push subscription.
+```http
+GET {{baseUrl}}/notifications/push/vapid-key
+```
+
 ## 🔒 Security Routes (`/api/security`)
 
 ### 1. Get Audit Logs

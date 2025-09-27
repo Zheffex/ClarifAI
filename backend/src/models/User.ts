@@ -1,6 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export interface IPushSubscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+  subscribedAt: Date;
+}
+
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
@@ -10,6 +19,7 @@ export interface IUser extends Document {
   role: 'admin' | 'analyst' | 'viewer';
   organizationId?: mongoose.Types.ObjectId;
   preferences: Record<string, any>;
+  pushSubscription?: IPushSubscription;
   lastLogin?: Date;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -80,6 +90,26 @@ const userSchema = new Schema<IUser>({
       message: 'Preferences must be an object'
     }
   },
+  pushSubscription: {
+    endpoint: {
+      type: String,
+      required: false
+    },
+    keys: {
+      p256dh: {
+        type: String,
+        required: false
+      },
+      auth: {
+        type: String,
+        required: false
+      }
+    },
+    subscribedAt: {
+      type: Date,
+      required: false
+    }
+  },
   lastLogin: {
     type: Date,
     required: false
@@ -117,7 +147,7 @@ userSchema.virtual('fullName').get(function(this: IUser) {
 });
 
 // Indexes for performance
-userSchema.index({ email: 1 }, { unique: true });
+// Email index is created automatically by unique: true
 userSchema.index({ organizationId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });

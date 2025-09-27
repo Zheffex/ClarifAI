@@ -25,7 +25,7 @@ interface NotificationData {
   type: INotification['type'];
   title: string;
   message: string;
-  metadata?: INotification['metadata'];
+  metadata?: INotification['metadata'] | Record<string, any>;
   priority?: INotification['priority'];
   scheduledFor?: Date;
   expiresAt?: Date;
@@ -158,46 +158,75 @@ export class NotificationService {
 
   // Send notification through specified channels
   async sendNotification(notification: INotification, channels: string[] = ['inApp']): Promise<void> {
-    const promises: Promise<void>[] = [];
+    const results: { channel: string; success: boolean; error?: string }[] = [];
 
-    // Always send in-app notification
+    // Process channels sequentially to avoid parallel document saves
     if (channels.includes('inApp')) {
-      promises.push(this.sendInAppNotification(notification));
+      try {
+        await this.sendInAppNotification(notification);
+        results.push({ channel: 'inApp', success: true });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Notification channel inApp failed:`, error);
+        results.push({ channel: 'inApp', success: false, error: errorMessage });
+      }
     }
 
     // Send email if configured and requested
     if (channels.includes('email') && this.isEmailConfigured) {
-      promises.push(this.sendEmailNotification(notification));
+      try {
+        await this.sendEmailNotification(notification);
+        results.push({ channel: 'email', success: true });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Notification channel email failed:`, error);
+        results.push({ channel: 'email', success: false, error: errorMessage });
+      }
     }
 
     // Send push notification if configured and requested
     if (channels.includes('push') && this.isPushConfigured) {
-      promises.push(this.sendPushNotification(notification));
+      try {
+        await this.sendPushNotification(notification);
+        results.push({ channel: 'push', success: true });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`Notification channel push failed:`, error);
+        results.push({ channel: 'push', success: false, error: errorMessage });
+      }
     }
 
-    // Execute all notifications in parallel
-    const results = await Promise.allSettled(promises);
-    
-    // Log any failures
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        logger.error(`Notification channel ${channels[index]} failed:`, result.reason);
+    // Update overall notification status
+    try {
+      // Get the latest version of the document to check if all channels are sent
+      const updatedNotification = await Notification.findById(notification._id);
+      if (updatedNotification) {
+        const allSent = Object.values(updatedNotification.channels).some(ch => ch.sent);
+        if (allSent && updatedNotification.status === 'pending') {
+          await Notification.findByIdAndUpdate(
+            notification._id,
+            { $set: { status: 'sent' } }
+          );
+        }
       }
-    });
-
-    // Update notification status
-    const allSent = Object.values(notification.channels).some(ch => ch.sent);
-    if (allSent) {
-      notification.status = 'sent';
-      await notification.save();
+    } catch (error) {
+      logger.error('Failed to update notification status:', error);
     }
   }
 
   // Send in-app notification
   private async sendInAppNotification(notification: INotification): Promise<void> {
     try {
-      // Mark as sent immediately for in-app notifications
-      await notification.markChannelAsSent('inApp');
+      // Use atomic update to avoid parallel save issues
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.inApp.sent': true,
+            'channels.inApp.sentAt': new Date()
+          }
+        }
+      );
       
       // Emit socket event for real-time notification
       if (global.socketService) {
@@ -210,12 +239,24 @@ export class NotificationService {
           priority: notification.priority,
           createdAt: notification.createdAt
         });
+      } else {
+        logger.debug('No active sockets found for user ' + notification.userId.toString());
       }
 
       logger.debug(`In-app notification sent to user ${notification.userId}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      await notification.markChannelAsFailed('inApp', errorMessage);
+      
+      // Use atomic update for error as well
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.inApp.error': errorMessage
+          }
+        }
+      );
+      
       throw error;
     }
   }
@@ -249,11 +290,32 @@ export class NotificationService {
         ...emailOptions
       });
 
-      await notification.markChannelAsSent('email', { emailId: result.messageId });
+      // Use atomic update to avoid parallel save issues
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.email.sent': true,
+            'channels.email.sentAt': new Date(),
+            'channels.email.emailId': result.messageId
+          }
+        }
+      );
+      
       logger.debug(`Email notification sent to ${user.email}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      await notification.markChannelAsFailed('email', errorMessage);
+      
+      // Use atomic update for error as well
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.email.error': errorMessage
+          }
+        }
+      );
+      
       throw error;
     }
   }
@@ -282,11 +344,34 @@ export class NotificationService {
       // In real implementation, you would use web-push or similar service
       logger.debug('Push notification would be sent:', pushData);
 
-      await notification.markChannelAsSent('push', { pushId: `push_${Date.now()}` });
+      const pushId = `push_${Date.now()}`;
+      
+      // Use atomic update to avoid parallel save issues
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.push.sent': true,
+            'channels.push.sentAt': new Date(),
+            'channels.push.pushId': pushId
+          }
+        }
+      );
+      
       logger.debug(`Push notification sent to user ${notification.userId}`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      await notification.markChannelAsFailed('push', errorMessage);
+      
+      // Use atomic update for error as well
+      await Notification.findByIdAndUpdate(
+        notification._id,
+        {
+          $set: {
+            'channels.push.error': errorMessage
+          }
+        }
+      );
+      
       throw error;
     }
   }

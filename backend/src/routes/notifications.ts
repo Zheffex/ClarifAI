@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
-import { requirePermission } from '../middleware/rbac';
+import { requirePermission, requireRole } from '../middleware/rbac';
 import {
   getNotifications,
   getNotificationById,
@@ -16,6 +16,12 @@ import {
   getMonitoringRules,
   deleteNotification,
   getNotificationStats,
+  testWebPush,
+  subscribeToPush,
+  unsubscribeFromPush,
+  getPushStatus,
+  sendTestPushToUser,
+  getVapidPublicKey,
   validateCreateTestNotification,
   validateUpdatePreferences,
   validateAddMonitoringRule
@@ -25,6 +31,14 @@ const router = Router();
 
 // Apply authentication to all notification routes
 router.use(authenticate);
+
+// Web Push Notification routes
+router.post('/test-webpush', testWebPush);
+router.post('/push/subscribe', subscribeToPush);
+router.delete('/push/unsubscribe', unsubscribeFromPush);
+router.get('/push/status', getPushStatus);
+router.post('/push/send-test/:userId', requireRole('admin'), sendTestPushToUser);
+router.get('/push/vapid-key', getVapidPublicKey);
 
 // Notification CRUD operations
 router.get('/', getNotifications);
