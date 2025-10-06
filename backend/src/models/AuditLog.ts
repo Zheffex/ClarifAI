@@ -183,8 +183,7 @@ const auditLogSchema = new Schema<IAuditLog>({
   timestamp: {
     type: Date,
     default: Date.now,
-    required: true,
-    index: true
+    required: true
   }
 }, {
   timestamps: true,

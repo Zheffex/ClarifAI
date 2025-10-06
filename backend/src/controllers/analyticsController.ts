@@ -836,7 +836,7 @@ async function generateDataInsights(data: any[], fields?: string[]): Promise<AII
     if (summaryInsight) insights.push(summaryInsight);
     
   } catch (error) {
-    console.error('Error generating insights:', error);
+    logger.error('Error generating insights:', error);
   }
   
   return insights.sort((a, b) => {

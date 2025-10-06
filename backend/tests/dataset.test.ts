@@ -1,6 +1,5 @@
-import request from 'supertest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import request from 'supertest';
 import { app } from '../src/index';
 import { User } from '../src/models/User';
 import { Dataset } from '../src/models/Dataset';
@@ -8,23 +7,9 @@ import path from 'path';
 import fs from 'fs';
 
 describe('Dataset Controller', () => {
-  let mongoServer: MongoMemoryServer;
   let authToken: string;
   let testUser: any;
   let testDataset: any;
-
-  beforeAll(async () => {
-    // Setup in-memory MongoDB
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-  });
-
-  afterAll(async () => {
-    // Cleanup
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   beforeEach(async () => {
     // Clean database before each test
@@ -34,7 +19,7 @@ describe('Dataset Controller', () => {
     // Create and login a test user
     const userData = {
       email: 'test@example.com',
-      password: 'password123',
+        password: 'Password123',
       firstName: 'Test',
       lastName: 'User',
       role: 'analyst'

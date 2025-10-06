@@ -1,0 +1,1143 @@
+openapi: 3.0.3
+info:
+  title: ClarifAI Backend API
+  description: |
+    Comprehensive TypeScript-based Node.js API server for data analysis, collaboration, and AI-powered insights.
+    Built with Express.js, MongoDB, and Socket.IO for real-time capabilities and robust security.
+  version: 1.0.0
+  contact:
+    name: ClarifAI Support
+    email: support@clarifai.com
+  license:
+    name: ISC
+    url: https://opensource.org/licenses/ISC
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://api.clarifai.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Basic health check endpoint
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                    example: development
+                  version:
+                    type: string
+                    example: 1.0.0
+
+  /health/detailed:
+    get:
+      summary: Detailed Health Check
+      description: Enhanced health check with service status
+      security: []
+      responses:
+        '200':
+          description: Detailed service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                    example: development
+                  version:
+                    type: string
+                    example: 1.0.0
+                  services:
+                    type: object
+                    properties:
+                      circuitBreakers:
+                        type: object
+                      gracefulDegradation:
+                        type: object
+                        properties:
+                          services:
+                            type: object
+                          degradedCount:
+                            type: integer
+                          totalServices:
+                            type: integer
+
+  /api/auth/register:
+    post:
+      summary: Register User
+      description: Creates a new user account. User remains inactive until email verification.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  example: securePassword123
+                firstName:
+                  type: string
+                  maxLength: 50
+                  example: John
+                lastName:
+                  type: string
+                  maxLength: 50
+                  example: Doe
+                role:
+                  type: string
+                  enum: [viewer, analyst]
+                  default: viewer
+                  example: viewer
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/verify-otp:
+    post:
+      summary: Verify OTP
+      description: Verifies email address using OTP code
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                otp:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                  example: "123456"
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      summary: Login User
+      description: Authenticates user and returns JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  example: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/me:
+    get:
+      summary: Get User Profile
+      description: Retrieves current user's profile information
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/datasets/upload:
+    post:
+      summary: Upload Dataset
+      description: Uploads a new dataset file for analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - name
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Dataset file (CSV, JSON, XLSX)
+                name:
+                  type: string
+                  maxLength: 100
+                  example: Sales Data
+                description:
+                  type: string
+                  maxLength: 1000
+                  example: Monthly sales data
+                tags:
+                  type: string
+                  description: JSON array of tags
+                  example: '["sales", "monthly"]'
+      responses:
+        '201':
+          description: Dataset uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      dataset:
+                        $ref: '#/components/schemas/Dataset'
+                      qualityReport:
+                        $ref: '#/components/schemas/QualityReport'
+                  message:
+                    type: string
+                    example: Dataset uploaded successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/datasets:
+    get:
+      summary: Get Datasets
+      description: Retrieves user's datasets with pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, ready, error]
+        - name: tags
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datasets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      datasets:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Dataset'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+  /api/datasets/{id}:
+    get:
+      summary: Get Dataset by ID
+      description: Retrieves specific dataset details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Dataset retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      dataset:
+                        $ref: '#/components/schemas/Dataset'
+        '404':
+          description: Dataset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/ai/chat-completion:
+    post:
+      summary: Chat Completion
+      description: Sends a message to the AI chat interface
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: Analyze the sales trends in my dataset
+                context:
+                  type: object
+                  properties:
+                    datasetId:
+                      type: string
+                      pattern: '^[0-9a-fA-F]{24}$'
+                    sessionId:
+                      type: string
+      responses:
+        '200':
+          description: Chat completion successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      response:
+                        type: string
+                        example: Based on your sales data, I can see a clear upward trend...
+                      sessionId:
+                        type: string
+                      timestamp:
+                        type: string
+                        format: date-time
+
+  /api/ai/analyze-text:
+    post:
+      summary: Analyze Text
+      description: Performs text analysis using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  example: Customer feedback text to analyze
+                analysisType:
+                  type: string
+                  enum: [sentiment, keywords, summary]
+                  default: sentiment
+      responses:
+        '200':
+          description: Text analysis successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      analysis:
+                        type: object
+                        properties:
+                          sentiment:
+                            type: string
+                            example: positive
+                          confidence:
+                            type: number
+                            minimum: 0
+                            maximum: 1
+                            example: 0.85
+                          keywords:
+                            type: array
+                            items:
+                              type: string
+                            example: ["excellent", "satisfied", "recommend"]
+                          summary:
+                            type: string
+                            example: Overall positive sentiment with high satisfaction
+
+  /api/analytics/query:
+    post:
+      summary: Process Query
+      description: Processes natural language queries against datasets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+                - datasetId
+              properties:
+                query:
+                  type: string
+                  example: What are the top selling products this month?
+                datasetId:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Query processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                      query:
+                        type: string
+                      executionTime:
+                        type: number
+
+  /api/analytics/insights:
+    post:
+      summary: Generate Insights
+      description: Generates automated insights from dataset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - datasetId
+              properties:
+                datasetId:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+                insightTypes:
+                  type: array
+                  items:
+                    type: string
+                    enum: [trends, anomalies, correlations]
+                  example: ["trends", "anomalies", "correlations"]
+      responses:
+        '200':
+          description: Insights generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      insights:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Insight'
+
+  /api/collaboration/share:
+    post:
+      summary: Share Resource
+      description: Shares a resource with other users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resourceType
+                - resourceId
+                - userId
+                - permission
+              properties:
+                resourceType:
+                  type: string
+                  enum: [dataset, analysis, dashboard]
+                resourceId:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+                userId:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+                permission:
+                  type: string
+                  enum: [read, write, admin]
+      responses:
+        '201':
+          description: Resource shared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      collaboration:
+                        $ref: '#/components/schemas/Collaboration'
+
+  /api/dashboard/overview:
+    get:
+      summary: Get Dashboard Overview
+      description: Retrieves complete dashboard overview
+      responses:
+        '200':
+          description: Dashboard overview retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      stats:
+                        $ref: '#/components/schemas/DashboardStats'
+                      recentActivity:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Activity'
+                      recentDatasets:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Dataset'
+
+  /api/notifications:
+    get:
+      summary: Get Notifications
+      description: Retrieves user notifications
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+  /api/security/audit-logs:
+    get:
+      summary: Get Audit Logs
+      description: Retrieves security audit logs (admin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Audit logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      logs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AuditLog'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        firstName:
+          type: string
+          maxLength: 50
+          example: John
+        lastName:
+          type: string
+          maxLength: 50
+          example: Doe
+        role:
+          type: string
+          enum: [admin, analyst, viewer]
+          example: viewer
+        organizationId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+          example: 507f1f77bcf86cd799439012
+        preferences:
+          type: object
+          additionalProperties: true
+        lastLogin:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+          example: true
+        isEmailVerified:
+          type: boolean
+          example: true
+        emailVerifiedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Dataset:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+          example: 507f1f77bcf86cd799439013
+        name:
+          type: string
+          maxLength: 100
+          example: Sales Data
+        description:
+          type: string
+          maxLength: 1000
+          example: Monthly sales data
+        fileId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        uploadedBy:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        organizationId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        dataSchema:
+          type: object
+          additionalProperties: true
+        metadata:
+          $ref: '#/components/schemas/DatasetMetadata'
+        processingStatus:
+          type: string
+          enum: [pending, processing, ready, error]
+          example: ready
+        processingError:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["sales", "monthly"]
+        isPublic:
+          type: boolean
+          example: false
+        accessPermissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessPermission'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DatasetMetadata:
+      type: object
+      properties:
+        size:
+          type: integer
+          minimum: 0
+          example: 1024000
+        type:
+          type: string
+          enum: [csv, json, xlsx, tsv, parquet]
+          example: csv
+        rows:
+          type: integer
+          minimum: 0
+          example: 1000
+        columns:
+          type: integer
+          minimum: 0
+          example: 5
+        encoding:
+          type: string
+          example: utf-8
+        delimiter:
+          type: string
+          example: ","
+        headers:
+          type: array
+          items:
+            type: string
+          example: ["date", "product", "quantity", "price", "revenue"]
+
+    AccessPermission:
+      type: object
+      properties:
+        userId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        permission:
+          type: string
+          enum: [read, write, admin]
+        grantedAt:
+          type: string
+          format: date-time
+        grantedBy:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+
+    Collaboration:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        resourceType:
+          type: string
+          enum: [dataset, analysis, dashboard]
+        resourceId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        ownerId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participant'
+        status:
+          type: string
+          enum: [active, ended]
+        settings:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Participant:
+      type: object
+      properties:
+        userId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        permission:
+          type: string
+          enum: [read, write, admin]
+        joinedAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        title:
+          type: string
+          example: Dataset Processing Complete
+        message:
+          type: string
+          example: Your 'Sales Data' dataset has been processed successfully
+        type:
+          type: string
+          enum: [info, success, warning, error]
+          example: success
+        isRead:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditLog:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        action:
+          type: string
+          example: user_login
+        userId:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+        ipAddress:
+          type: string
+          example: 192.168.1.1
+        userAgent:
+          type: string
+          example: Mozilla/5.0...
+        timestamp:
+          type: string
+          format: date-time
+        success:
+          type: boolean
+          example: true
+
+    QualityReport:
+      type: object
+      properties:
+        overall:
+          type: object
+          properties:
+            score:
+              type: number
+              minimum: 0
+              maximum: 100
+              example: 85
+            issues:
+              type: integer
+              example: 3
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              completeness:
+                type: number
+                minimum: 0
+                maximum: 100
+              validity:
+                type: number
+                minimum: 0
+                maximum: 100
+
+    Insight:
+      type: object
+      properties:
+        type:
+          type: string
+          example: trend
+        title:
+          type: string
+          example: Sales Growth Trend
+        description:
+          type: string
+          example: Sales have increased by 15% over the last quarter
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.92
+        data:
+          type: object
+          additionalProperties: true
+
+    DashboardStats:
+      type: object
+      properties:
+        totalDatasets:
+          type: integer
+          example: 15
+        activeCollaborations:
+          type: integer
+          example: 3
+        totalAnalyses:
+          type: integer
+          example: 45
+        storageUsed:
+          type: string
+          example: 2.5 GB
+
+    Activity:
+      type: object
+      properties:
+        type:
+          type: string
+          example: dataset_upload
+        description:
+          type: string
+          example: Uploaded 'Sales Data' dataset
+        timestamp:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+          example: 1
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 5
+        totalItems:
+          type: integer
+          minimum: 0
+          example: 50
+        itemsPerPage:
+          type: integer
+          minimum: 1
+          example: 10
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            user:
+              $ref: '#/components/schemas/User'
+        message:
+          type: string
+          example: Login successful
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid request data
+            details:
+              type: string
+              example: Email is required
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+              example: req_1234567890_abc123
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Datasets
+    description: Dataset upload, management, and processing
+  - name: AI
+    description: AI-powered analysis and chat functionality
+  - name: Analytics
+    description: Data analysis and insights generation
+  - name: Collaboration
+    description: Real-time collaboration features
+  - name: Dashboard
+    description: Dashboard and overview data
+  - name: Notifications
+    description: User notifications and alerts
+  - name: Security
+    description: Security and audit features

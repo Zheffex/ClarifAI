@@ -1,5 +1,6 @@
 import { GridFSBucket } from 'mongodb';
 import mongoose from 'mongoose';
+import { logger } from '../config/logger';
 
 export interface FieldSchema {
   name: string;
@@ -81,7 +82,7 @@ export class SchemaDetectionService {
     const sampleData = data.length > sampleSize ? 
       this.getSampleData(data, sampleSize) : data;
     
-    console.log(`Analyzing ${sampleData.length} rows out of ${data.length} total rows`);
+    logger.debug(`Analyzing ${sampleData.length} rows out of ${data.length} total rows`);
 
     const fields = await this.analyzeFields(sampleData);
     const relationships = await this.detectRelationships(sampleData, fields);

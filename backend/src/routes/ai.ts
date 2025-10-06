@@ -9,10 +9,10 @@ import {
   validateTextAnalysis,
   validateImageAnalysis,
   validateDataInsights,
-  handleValidationErrors,
   uploadImage,
   handleMulterError
 } from '../controllers/aiController';
+import { handleValidationErrors } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();

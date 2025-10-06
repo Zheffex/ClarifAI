@@ -264,19 +264,16 @@ const collaborationSchema = new Schema<ICollaboration>({
       values: ['dashboard', 'analysis', 'dataset'],
       message: 'Resource type must be dashboard, analysis, or dataset'
     },
-    required: [true, 'Resource type is required'],
-    index: true
+    required: [true, 'Resource type is required']
   },
   resourceId: {
     type: Schema.Types.ObjectId,
-    required: [true, 'Resource ID is required'],
-    index: true
+    required: [true, 'Resource ID is required']
   },
   ownerId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Owner ID is required'],
-    index: true
+    required: [true, 'Owner ID is required']
   },
   participants: [participantSchema],
   comments: [commentSchema],
@@ -300,8 +297,7 @@ const collaborationSchema = new Schema<ICollaboration>({
     },
     isPublic: {
       type: Boolean,
-      default: false,
-      index: true
+      default: false
     },
     expiresAt: {
       type: Date
@@ -315,8 +311,7 @@ const collaborationSchema = new Schema<ICollaboration>({
   lastModified: {
     type: Date,
     default: Date.now,
-    required: true,
-    index: true
+    required: true
   }
 }, {
   timestamps: true,

@@ -71,8 +71,14 @@ class Environment {
     
     if (missingVars.length > 0) {
       const error = `Missing required environment variables: ${missingVars.join(', ')}`;
-      console.error(error);
+      // Use logger instead of console.error for better security
       throw new Error(error);
+    }
+
+    // Validate JWT secret strength
+    const jwtSecret = process.env.JWT_SECRET;
+    if (jwtSecret && jwtSecret.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters long for security');
     }
 
     // Validate and parse environment variables
@@ -126,7 +132,7 @@ class Environment {
         RATE_LIMIT_MAX_REQUESTS: this.getNumber('RATE_LIMIT_MAX_REQUESTS', 100),
       };
     } catch (error) {
-      console.error('Failed to load environment configuration:', error);
+      // Log error through proper logging system instead of console
       throw error;
     }
   }

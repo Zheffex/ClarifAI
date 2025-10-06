@@ -3,6 +3,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Environment variables
 .env
@@ -10,68 +12,301 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
 
 # Build outputs
 dist/
 build/
+out/
+.next/
+.nuxt/
+.vuepress/dist
 
-# IDE
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# IDE and Editor files
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+.factorypath
+.springBeans
+.recommenders/
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # Logs
-logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
 coverage/
+*.lcov
+.nyc_output/
 
-# MongoDB
-data/
+# Dependency directories
+jspm_packages/
 
-# Uploads
-uploads/
-test-uploads/
+# Optional npm cache directory
+.npm
 
-# Temporary files
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
 tmp/
 temp/
+.tmp/
 
-# Unexpected files
-*.exe
-*.so
-*.dll
-*.swp
-*.swo
-*.pyc
-*.rbc
-*.class
-*.sublime-project
-*.sublime-workspace
-*.DS_Store
-*.suo
-*.tmp
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.dat
+data/
+
+# Uploads and user content
+uploads/
+test-uploads/
+user-uploads/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+test-results.xml
+
+# Security and secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Backup files
 *.bak
+*.backup
+*.old
+*.orig
+
+# Archive files
 *.zip
 *.tar.gz
 *.rar
 *.7z
-*.sql
-*.db
-*.tmp
-*.log
-*.lock
-*.sqlite
-*.sqlite3
-*.dat
-*.qoder
+*.tar
+*.gz
+
+# Executable files
+*.exe
+*.so
+*.dll
+*.bin
+
+# Python files (if any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Java files (if any Java components)
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+# Cursor IDE
+.cursor/
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# MacOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Project specific
+backend/logs/
+backend/uploads/
+backend/test-uploads/
+backend/dist/
+backend/coverage/
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# AI/ML specific
+*.model
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pth
+*.pt
+*.ckpt
+models/
+checkpoints/
+datasets/
+*.csv
+*.json
+*.parquet
+*.feather
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Large files that shouldn't be in git
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.wma
+.cursor

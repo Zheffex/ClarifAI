@@ -150,7 +150,7 @@ export class FileUploadService {
         })
         .on('error', (error) => {
           logger.error('CSV parsing error:', error);
-          reject(error);
+          reject(new Error('CSV parsing failed'));
         });
     });
   }
@@ -243,18 +243,22 @@ export class FileUploadService {
         return;
       }
 
-      const numericCount = sampleValues.filter(val => !isNaN(Number(val))).length;
-      const dateCount = sampleValues.filter(val => !isNaN(Date.parse(val))).length;
       const booleanCount = sampleValues.filter(val => 
         typeof val === 'boolean' || val === 'true' || val === 'false'
       ).length;
+      const numericCount = sampleValues.filter(val => 
+        !isNaN(Number(val)) && typeof val !== 'boolean' && val !== 'true' && val !== 'false'
+      ).length;
+      const dateCount = sampleValues.filter(val => 
+        !isNaN(Date.parse(val)) && typeof val !== 'boolean' && val !== 'true' && val !== 'false'
+      ).length;
 
-      if (numericCount / sampleValues.length > 0.8) {
+      if (booleanCount / sampleValues.length > 0.8) {
+        dataTypes[header] = 'boolean';
+      } else if (numericCount / sampleValues.length > 0.8) {
         dataTypes[header] = 'number';
       } else if (dateCount / sampleValues.length > 0.8) {
         dataTypes[header] = 'date';
-      } else if (booleanCount / sampleValues.length > 0.8) {
-        dataTypes[header] = 'boolean';
       } else {
         dataTypes[header] = 'string';
       }

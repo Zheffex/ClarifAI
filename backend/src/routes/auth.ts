@@ -14,9 +14,9 @@ import {
   validateResendOTP,
   validateLogin,
   validateUpdateProfile,
-  validateChangePassword,
-  handleValidationErrors
+  validateChangePassword
 } from '../controllers/authController';
+import { handleValidationErrors } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
 import {requirePermission} from "../middleware/rbac";
 

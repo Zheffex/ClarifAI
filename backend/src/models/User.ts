@@ -26,11 +26,17 @@ export interface IUser extends Document {
   markEmailAsVerified(): Promise<void>;
 }
 
+export interface IUserModel extends mongoose.Model<IUser> {
+  findByEmail(email: string): Promise<IUser | null>;
+  findActiveUsers(): Promise<IUser[]>;
+  findByRole(role: string): Promise<IUser[]>;
+  findByOrganization(organizationId: string): Promise<IUser[]>;
+}
+
 const userSchema = new Schema<IUser>({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true,
     lowercase: true,
     trim: true,
     match: [
@@ -174,4 +180,4 @@ userSchema.statics.findByOrganization = function(organizationId: string) {
   return this.find({ organizationId, isActive: true });
 };
 
-export const User = mongoose.model<IUser>('User', userSchema);
+export const User = mongoose.model<IUser, IUserModel>('User', userSchema);

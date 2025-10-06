@@ -1,4 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import webpush from 'web-push';
 import { Notification, NotificationTemplate, INotification, INotificationPreferences } from '../models/Notification';
 import { User } from '../models/User';
 import { logger } from '../config/logger';
@@ -81,9 +82,13 @@ export class NotificationService {
   // Initialize push notification service (Web Push)
   private initializePushService(): void {
     try {
-      // For web push notifications, you would typically use web-push library
-      // This is a placeholder for push notification setup
       if (env.webPush?.publicKey && env.webPush?.privateKey) {
+        // Set VAPID details for web-push
+        webpush.setVapidDetails(
+          env.webPush.contact || 'mailto:admin@clarifai.com',
+          env.webPush.publicKey,
+          env.webPush.privateKey
+        );
         this.isPushConfigured = true;
         logger.info('Push notification service initialized successfully');
       } else {

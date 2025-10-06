@@ -239,14 +239,12 @@ const analysisSessionSchema = new Schema<IAnalysisSession>({
   datasetId: {
     type: Schema.Types.ObjectId,
     ref: 'Dataset',
-    required: [true, 'Dataset ID is required'],
-    index: true
+    required: [true, 'Dataset ID is required']
   },
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User ID is required'],
-    index: true
+    required: [true, 'User ID is required']
   },
   title: {
     type: String,
@@ -264,8 +262,7 @@ const analysisSessionSchema = new Schema<IAnalysisSession>({
   }],
   isShared: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   shareSettings: {
     allowComments: {
@@ -283,8 +280,7 @@ const analysisSessionSchema = new Schema<IAnalysisSession>({
   lastActivity: {
     type: Date,
     default: Date.now,
-    required: true,
-    index: true
+    required: true
   }
 }, {
   timestamps: true,

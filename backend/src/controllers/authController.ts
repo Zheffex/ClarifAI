@@ -6,68 +6,113 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
 import { otpService } from '../services/otpService';
 import { EmailService } from '../services/emailService';
+import { 
+  AuthenticationError,
+  InvalidCredentialsError,
+  TokenExpiredError,
+  ValidationError,
+  RecordNotFoundError,
+  DuplicateRecordError,
+  BusinessRuleViolationError,
+  OperationNotAllowedError
+} from '../types/errors';
+import { 
+  sanitizeInput, 
+  handleValidationErrors,
+  commonValidations 
+} from '../middleware/validation';
+import { 
+  retryEmailOperation,
+  withCircuitBreakerEmail 
+} from '../middleware/retry';
+import { 
+  withGracefulDegradation 
+} from '../middleware/gracefulDegradation';
 
 // Register user
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password, firstName, lastName, role } = req.body;
+  const requestId = req.headers['x-request-id'] as string;
+  const context = { requestId, operation: 'user_registration' };
 
-  // Check if user already exists
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    if (existingUser.isEmailVerified) {
-      throw new AppError('User with this email already exists', 400);
-    } else {
-      // User exists but email not verified - we can send a new OTP
-      const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification');
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      if (existingUser.isEmailVerified) {
+        throw new DuplicateRecordError('User', 'email', context);
+      } else {
+        // User exists but email not verified - we can send a new OTP
+        const otpResult = await withGracefulDegradation(
+          'email',
+          () => otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification'),
+          context
+        );
 
-      res.status(200).json({
-        success: true,
-        data: {
-          emailSent: otpResult.success,
-          canResend: otpResult.canResend,
-          nextResendTime: otpResult.nextResendTime
-        },
-        message: 'Account exists but not verified. A new verification code has been sent to your email.'
-      });
-      return;
+        res.status(200).json({
+          success: true,
+          data: {
+            emailSent: otpResult.success,
+            canResend: otpResult.canResend,
+            nextResendTime: otpResult.nextResendTime
+          },
+          message: 'Account exists but not verified. A new verification code has been sent to your email.'
+        });
+        return;
+      }
     }
-  }
 
-  // Prevent admin role assignment during registration
-  if (role === 'admin') {
-    throw new AppError('Admin role cannot be assigned during registration', 400);
-  }
+    // Prevent admin role assignment during registration
+    if (role === 'admin') {
+      throw new BusinessRuleViolationError('Admin role cannot be assigned during registration', context);
+    }
 
-  // Create new user (inactive until email verified)
-  const user = new User({
-    email: email.toLowerCase(),
-    passwordHash: password, // Will be hashed by pre-save middleware
-    firstName,
-    lastName,
-    role: role || 'viewer',
-    preferences: {},
-    isActive: false, // User starts inactive
-    isEmailVerified: false
-  });
+    // Create new user (inactive until email verified)
+    const user = new User({
+      email: email.toLowerCase(),
+      passwordHash: password, // Will be hashed by pre-save middleware
+      firstName,
+      lastName,
+      role: role || 'viewer',
+      preferences: {},
+      isActive: false, // User starts inactive
+      isEmailVerified: false
+    });
 
-  await user.save();
+    await user.save();
 
-  // Generate and send OTP
-  const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification');
+    // Generate and send OTP with graceful degradation
+    const otpResult = await withGracefulDegradation(
+      'email',
+      () => otpService.generateAndSendOTP(email.toLowerCase(), firstName, 'email_verification'),
+      context
+    );
 
-  logger.info(`New user registered (pending verification): ${user.email}`);
-
-  res.status(201).json({
-    success: true,
-    data: {
+    logger.info(`New user registered (pending verification): ${user.email}`, {
       userId: user._id,
       email: user.email,
-      emailSent: otpResult.success,
-      canResend: otpResult.canResend,
-      nextResendTime: otpResult.nextResendTime
-    },
-    message: 'Registration successful! Please check your email for the verification code.'
-  });
+      context
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        userId: user._id,
+        email: user.email,
+        emailSent: otpResult.success,
+        canResend: otpResult.canResend,
+        nextResendTime: otpResult.nextResendTime
+      },
+      message: 'Registration successful! Please check your email for the verification code.'
+    });
+  } catch (error) {
+    logger.error('User registration failed', {
+      email,
+      error: (error as Error).message,
+      context
+    });
+    throw error;
+  }
 });
 
 // Verify OTP - Step 2: Complete registration
@@ -167,63 +212,82 @@ export const resendOTP = asyncHandler(async (req: Request, res: Response): Promi
 // Login user
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
+  const requestId = req.headers['x-request-id'] as string;
+  const context = { requestId, operation: 'user_login' };
 
-  // Find user and include password for comparison
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
-  if (!user) {
-    throw new AppError('Invalid credentials', 401);
+  try {
+    // Find user and include password for comparison
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+    if (!user) {
+      throw new InvalidCredentialsError(context);
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      // Resend OTP if user exists but email not verified
+      const otpResult = await withGracefulDegradation(
+        'email',
+        () => otpService.generateAndSendOTP(email, user.firstName, 'email_verification'),
+        context
+      );
+
+      throw new AuthenticationError('Please verify your email first. We have sent a new verification code to your email.', context);
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new OperationNotAllowedError('login', 'Account has been deactivated', context);
+    }
+
+    // Verify password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      throw new InvalidCredentialsError(context);
+    }
+
+    // Update last login
+    await user.updateLastLogin();
+
+    // Generate token
+    const token = generateToken(user);
+
+    // Remove password from response
+    const userResponse = {
+      _id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      organizationId: user.organizationId,
+      preferences: user.preferences,
+      lastLogin: user.lastLogin,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    logger.info(`User logged in: ${user.email}`, {
+      userId: user._id,
+      email: user.email,
+      context
+    });
+
+    res.json({
+      success: true,
+      data: {
+        user: userResponse,
+        token
+      },
+      message: 'Login successful'
+    });
+  } catch (error) {
+    logger.error('User login failed', {
+      email,
+      error: (error as Error).message,
+      context
+    });
+    throw error;
   }
-
-  // Check if email is verified
-  if (!user.isEmailVerified) {
-    // Resend OTP if user exists but email not verified
-    const otpResult = await otpService.generateAndSendOTP(email, user.firstName, 'email_verification');
-
-    throw new AppError('Please verify your email first. We have sent a new verification code to your email.', 401);
-  }
-
-  // Check if user is active
-  if (!user.isActive) {
-    throw new AppError('Account has been deactivated', 401);
-  }
-
-  // Verify password
-  const isPasswordValid = await user.comparePassword(password);
-  if (!isPasswordValid) {
-    throw new AppError('Invalid credentials', 401);
-  }
-
-  // Update last login
-  await user.updateLastLogin();
-
-  // Generate token
-  const token = generateToken(user);
-
-  // Remove password from response
-  const userResponse = {
-    _id: user._id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    organizationId: user.organizationId,
-    preferences: user.preferences,
-    lastLogin: user.lastLogin,
-    isActive: user.isActive,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
-  };
-
-  logger.info(`User logged in: ${user.email}`);
-
-  res.json({
-    success: true,
-    data: {
-      user: userResponse,
-      token
-    },
-    message: 'Login successful'
-  });
 });
 
 // Logout user (client-side token removal, optional server-side blacklisting)
@@ -413,72 +477,52 @@ export const validateResendOTP = [
     .withMessage('Please provide a valid email')
 ];
 
-// Validation rules
+// Enhanced validation rules using new validation middleware
 export const validateRegister = [
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long'),
-  body('firstName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
-  body('lastName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
-  body('role')
-    .optional()
-    .isIn(['analyst', 'viewer'])
-    .withMessage('Role must be analyst or viewer')
+  sanitizeInput,
+  ...commonValidations.userRegistration,
+  handleValidationErrors
 ];
 
 export const validateLogin = [
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
+  sanitizeInput,
+  ...commonValidations.userLogin,
+  handleValidationErrors
 ];
 
 export const validateUpdateProfile = [
+  sanitizeInput,
   body('firstName')
     .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
+    .withMessage('First name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s\-']+$/)
+    .withMessage('First name contains invalid characters'),
   body('lastName')
     .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
+    .withMessage('Last name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s\-']+$/)
+    .withMessage('Last name contains invalid characters'),
   body('preferences')
     .optional()
     .isObject()
-    .withMessage('Preferences must be an object')
+    .withMessage('Preferences must be an object'),
+  handleValidationErrors
 ];
 
 export const validateChangePassword = [
-  body('currentPassword')
-    .notEmpty()
-    .withMessage('Current password is required'),
-  body('newPassword')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long')
+  sanitizeInput,
+  ...commonValidations.passwordChange,
+  handleValidationErrors
 ];
 
-// Validation error handler middleware
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const errorMessages = errors.array().map(error => error.msg);
-    next(new AppError(errorMessages.join('. '), 400));
-    return;
-  }
-  next();
-};
+
+export const validateSearchUsers = [
+  sanitizeInput,
+  ...commonValidations.search,
+  ...commonValidations.pagination,
+  handleValidationErrors
+];

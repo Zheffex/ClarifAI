@@ -119,20 +119,17 @@ const datasetSchema = new Schema<IDataset>({
   },
   fileId: {
     type: Schema.Types.ObjectId,
-    required: [true, 'File ID is required'],
-    index: true
+    required: [true, 'File ID is required']
   },
   uploadedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Uploader ID is required'],
-    index: true
+    required: [true, 'Uploader ID is required']
   },
   organizationId: {
     type: Schema.Types.ObjectId,
     ref: 'Organization',
-    required: [true, 'Organization ID is required'],
-    index: true
+    required: [true, 'Organization ID is required']
   },
   dataSchema: {
     type: Schema.Types.Mixed,
@@ -155,8 +152,7 @@ const datasetSchema = new Schema<IDataset>({
       message: 'Processing status must be pending, processing, ready, or error'
     },
     required: true,
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   processingError: {
     type: String,
@@ -171,8 +167,7 @@ const datasetSchema = new Schema<IDataset>({
   isPublic: {
     type: Boolean,
     default: false,
-    required: true,
-    index: true
+    required: true
   },
   accessPermissions: [accessPermissionSchema]
 }, {

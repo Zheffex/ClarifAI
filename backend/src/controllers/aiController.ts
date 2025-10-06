@@ -5,24 +5,83 @@ import { openRouterService } from '../services/openRouterService';
 import { IUser } from '../models/User';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
+import { 
+  AuthenticationError,
+  ValidationError,
+  ExternalServiceError,
+  ServiceUnavailableError,
+  RecordNotFoundError,
+  OperationNotAllowedError,
+  QuotaExceededError
+} from '../types/errors';
+import { 
+  sanitizeInput, 
+  handleValidationErrors,
+  validateFileUpload,
+  validateJSON,
+  validateURL
+} from '../middleware/validation';
+import { 
+  retryApiCall,
+  withCircuitBreakerApi 
+} from '../middleware/retry';
+import { 
+  withGracefulDegradation 
+} from '../middleware/gracefulDegradation';
 
 // Chat completion endpoint
 export const chatCompletion = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const user = req.user as IUser;
   const { messages } = req.body;
+  const requestId = req.headers['x-request-id'] as string;
+  const context = { requestId, userId: user?._id?.toString(), operation: 'chat_completion' };
 
   if (!user) {
-    throw new AppError('Authentication required', 401);
+    throw new AuthenticationError('Authentication required', context);
   }
 
   if (!openRouterService.isConfigured()) {
-    throw new AppError('AI service is not configured', 503);
+    throw new ServiceUnavailableError('AI service is not configured', context);
   }
 
   try {
-    const response = await openRouterService.chatCompletion(messages);
+    // Add system message to focus on analytics topics
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a specialized data analytics assistant for ClarifAI. Your expertise is focused on:\n\n' +
+        '• Data analysis techniques and methodologies\n' +
+        '• Statistical analysis and interpretation\n' +
+        '• Data visualization and reporting\n' +
+        '• Machine learning for analytics\n' +
+        '• Data preprocessing and cleaning\n' +
+        '• Business intelligence and insights\n' +
+        '• Database queries and data manipulation\n' +
+        '• Analytics tools and platforms\n' +
+        '• Data quality assessment\n' +
+        '• Predictive analytics and forecasting\n\n' +
+        'Please stay focused on data analytics topics and politely redirect any non-analytics questions back to data analysis, statistics, or business intelligence topics. ' +
+        'If asked about unrelated topics (like medical advice, legal matters, etc.), kindly explain that you are specialized in data analytics and suggest how the question might be reframed in an analytics context.'
+    };
+
+    // Prepend system message to the messages array
+    const messagesWithSystem = [systemMessage, ...messages];
+
+    const response = await withGracefulDegradation(
+      'ai',
+      () => withCircuitBreakerApi(
+        'openrouter',
+        () => openRouterService.chatCompletion(messagesWithSystem),
+        undefined,
+        context
+      ),
+      context
+    );
     
-    logger.info(`AI chat completion requested by user ${user.email}`);
+    logger.info(`AI chat completion requested by user ${user.email}`, {
+      userId: user._id.toString(),
+      messageCount: messages?.length || 0,
+      context
+    });
 
     res.json({
       success: true,
@@ -30,10 +89,20 @@ export const chatCompletion = asyncHandler(async (req: Request, res: Response): 
       message: 'Chat completion generated successfully'
     });
   } catch (error: any) {
-    logger.error('Chat completion error:', error);
-    throw new AppError(
+    logger.error('Chat completion error:', {
+      error: error.message,
+      userId: user._id.toString(),
+      context
+    });
+    
+    if (error.type === 'QUOTA_EXCEEDED') {
+      throw new QuotaExceededError('AI requests', 100, context);
+    }
+    
+    throw new ExternalServiceError(
+      'AI Service',
       error.message || 'Failed to generate chat completion',
-      500
+      context
     );
   }
 });
@@ -361,16 +430,6 @@ export const validateDataInsights = [
     .withMessage('includePatterns must be boolean')
 ];
 
-// Validation error handler
-export const handleValidationErrors = (req: Request, res: Response, next: Function): void => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const errorMessages = errors.array().map(error => error.msg);
-    next(new AppError(errorMessages.join('. '), 400));
-    return;
-  }
-  next();
-};
 
 // Handle multer errors
 export const handleMulterError = (error: any, req: Request, res: Response, next: Function): void => {

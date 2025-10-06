@@ -97,8 +97,7 @@ const notificationSchema = new Schema<INotification>({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User ID is required'],
-    index: true
+    required: [true, 'User ID is required']
   },
   type: {
     type: String,
@@ -106,8 +105,7 @@ const notificationSchema = new Schema<INotification>({
       values: ['data_change', 'anomaly_detected', 'collaboration_update', 'system_alert', 'analysis_complete', 'prediction_ready', 'info'],
       message: 'Notification type must be one of: data_change, anomaly_detected, collaboration_update, system_alert, analysis_complete, prediction_ready, info'
     },
-    required: [true, 'Notification type is required'],
-    index: true
+    required: [true, 'Notification type is required']
   },
   title: {
     type: String,
@@ -154,12 +152,10 @@ const notificationSchema = new Schema<INotification>({
       message: 'Status must be pending, sent, failed, or cancelled'
     },
     default: 'pending',
-    required: true,
-    index: true
+    required: true
   },
   scheduledFor: {
-    type: Date,
-    index: true
+    type: Date
   },
   priority: {
     type: String,
@@ -168,12 +164,10 @@ const notificationSchema = new Schema<INotification>({
       message: 'Priority must be low, normal, high, or urgent'
     },
     default: 'normal',
-    required: true,
-    index: true
+    required: true
   },
   expiresAt: {
-    type: Date,
-    index: true
+    type: Date
   }
 }, {
   timestamps: true,
@@ -260,8 +254,7 @@ const notificationTemplateSchema = new Schema<INotificationTemplate>({
   },
   type: {
     type: String,
-    required: [true, 'Template type is required'],
-    index: true
+    required: [true, 'Template type is required']
   },
   subject: {
     type: String,

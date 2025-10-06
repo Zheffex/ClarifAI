@@ -12,6 +12,12 @@ export interface IOTPVerification extends Document {
   updatedAt: Date;
 }
 
+export interface IOTPVerificationModel extends mongoose.Model<IOTPVerification> {
+  findValidOTP(email: string, otp: string, type?: string): Promise<IOTPVerification | null>;
+  findLatestByEmail(email: string, type?: string): Promise<IOTPVerification | null>;
+  cleanupExpired(): Promise<any>;
+}
+
 const otpVerificationSchema = new Schema<IOTPVerification>({
   email: {
     type: String,
@@ -107,4 +113,4 @@ otpVerificationSchema.statics.cleanupExpired = function() {
   });
 };
 
-export const OTPVerification = mongoose.model<IOTPVerification>('OTPVerification', otpVerificationSchema);
+export const OTPVerification = mongoose.model<IOTPVerification, IOTPVerificationModel>('OTPVerification', otpVerificationSchema);
