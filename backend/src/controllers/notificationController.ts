@@ -409,6 +409,191 @@ export const getNotificationStats = asyncHandler(async (req: Request, res: Respo
   });
 });
 
+// Web Push Notification endpoints
+export const testWebPush = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+  const { title, message, url, icon, badge } = req.body;
+
+  try {
+    // Create a test web push notification
+    const notificationData = {
+      userId: user._id.toString(),
+      type: 'system_alert' as const,
+      title: title || 'Test Web Push',
+      message: message || 'This is a test web push notification',
+      metadata: {
+        url: url || 'http://localhost:3000/dashboard',
+        icon: icon || 'http://localhost:3000/icon.png',
+        badge: badge || 'http://localhost:3000/badge.png'
+      },
+      channels: ['push', 'inApp'] as ('email' | 'push' | 'inApp')[]
+    };
+
+    const notification = await notificationService.createNotification(notificationData);
+
+    res.json({
+      success: true,
+      message: 'Test web push notification sent successfully',
+      data: { notification }
+    });
+  } catch (error) {
+    logger.error('Test web push failed:', error);
+    throw new AppError('Failed to send test web push notification', 500);
+  }
+});
+
+export const subscribeToPush = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+  const { subscription, userAgent } = req.body;
+
+  if (!subscription || !subscription.endpoint) {
+    throw new AppError('Valid push subscription is required', 400);
+  }
+
+  try {
+    // Save subscription to user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          'pushSubscription': {
+            endpoint: subscription.endpoint,
+            keys: subscription.keys,
+            userAgent: userAgent,
+            subscribedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Successfully subscribed to push notifications',
+      data: { subscription: updatedUser?.pushSubscription }
+    });
+  } catch (error) {
+    logger.error('Push subscription failed:', error);
+    throw new AppError('Failed to subscribe to push notifications', 500);
+  }
+});
+
+export const unsubscribeFromPush = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+  
+  // endpoint is optional since we're removing the entire subscription
+  const { endpoint } = req.body || {};
+
+  try {
+    // Remove subscription from user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $unset: { pushSubscription: 1 }
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Successfully unsubscribed from push notifications',
+      data: {
+        unsubscribed: true,
+        endpoint: endpoint || null
+      }
+    });
+  } catch (error) {
+    logger.error('Push unsubscription failed:', error);
+    throw new AppError('Failed to unsubscribe from push notifications', 500);
+  }
+});
+
+export const getPushStatus = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+
+  try {
+    const userWithSubscription = await User.findById(user._id).select('pushSubscription preferences');
+
+    const hasSubscription = !!userWithSubscription?.pushSubscription;
+    const pushEnabled = userWithSubscription?.preferences?.notifications?.push ?? true;
+
+    res.json({
+      success: true,
+      data: {
+        subscribed: hasSubscription,
+        enabled: pushEnabled,
+        subscription: hasSubscription ? {
+          endpoint: userWithSubscription.pushSubscription?.endpoint,
+          subscribedAt: userWithSubscription.pushSubscription?.subscribedAt
+        } : null
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to get push status:', error);
+    throw new AppError('Failed to get push notification status', 500);
+  }
+});
+
+export const sendTestPushToUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as IUser;
+  const { userId } = req.params;
+  
+  // Safely destructure with default values in case req.body is undefined
+  const { title, message, data } = req.body || {};
+
+  // Check if user has admin permissions (basic check)
+  if (user.role !== 'admin') {
+    throw new AppError('Admin access required', 403);
+  }
+
+  try {
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      throw new AppError('Target user not found', 404);
+    }
+
+    const notificationData = {
+      userId: targetUser._id.toString(),
+      type: 'system_alert' as const,
+      title: title || 'Admin Test Push',
+      message: message || 'This is an admin test push notification',
+      metadata: data || {},
+      channels: ['push', 'inApp'] as ('email' | 'push' | 'inApp')[]
+    };
+
+    const notification = await notificationService.createNotification(notificationData);
+
+    res.json({
+      success: true,
+      message: 'Test push notification sent to user successfully',
+      data: { notification }
+    });
+  } catch (error) {
+    logger.error('Admin test push failed:', error);
+    throw new AppError('Failed to send test push notification', 500);
+  }
+});
+
+export const getVapidPublicKey = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { env } = await import('../config/environment');
+    
+    if (!env.webPush?.publicKey) {
+      throw new AppError('VAPID public key not configured', 500);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        publicKey: env.webPush.publicKey
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to get VAPID public key:', error);
+    throw new AppError('Failed to get VAPID public key', 500);
+  }
+});
+
 // Validation middleware
 export const validateCreateTestNotification = [
   body('title').optional().isLength({ min: 1, max: 200 }).withMessage('Title must be 1-200 characters'),

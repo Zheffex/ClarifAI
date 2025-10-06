@@ -208,6 +208,7 @@ auditLogSchema.index({ targetType: 1, targetId: 1, timestamp: -1 });
 auditLogSchema.index({ endpoint: 1, method: 1, timestamp: -1 });
 
 // TTL index for automatic cleanup (keep logs for 7 years for compliance)
+// Note: timestamp field already has index: true, TTL requires separate index
 auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 7 * 365 * 24 * 60 * 60 });
 
 // Static method to log authentication events
