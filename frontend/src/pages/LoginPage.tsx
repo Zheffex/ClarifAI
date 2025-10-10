@@ -53,22 +53,45 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="auth-container">
+      {/* Info / Branding Section (Left side) */}
+     <div className="auth-info">
+        <div className="info-card">
+          <div className="info-content">
+            <img
+              src="logo192.png" 
+              className="info-image"
+            />
+            <title>Login</title>
+            <h3>ClarifAI</h3>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Login Form Card */}
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="auth-logo">ClarifAI</h1>
-          <h2 className="auth-title">Sign In</h2>
-          <p className="auth-subtitle">Welcome back! Please sign in to your account.</p>
+          <h2 className="auth-title">Welcome back!</h2>
+          <p className="auth-subtitle">
+            Please enter your details to login.
+          </p>
+
+          <h2 className='auth-titles'>SIGN IN </h2>
+          
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email Address</label>
+          {/* Email */}
+          <div className="form-group ">
+            <label htmlFor="email" className="form-label">
+              Email Address
+            </label>
             <input
               type="email"
               id="email"
               name="email"
               className="form-input"
-              placeholder="Enter your email"
+              placeholder="johndoe@gmail.com"
               value={formData.email}
               onChange={handleChange}
               required
@@ -76,14 +99,17 @@ const LoginPage: React.FC = () => {
             />
           </div>
 
+          {/* Password */}
           <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <input
               type="password"
               id="password"
               name="password"
               className="form-input"
-              placeholder="Enter your password"
+              placeholder="********"
               value={formData.password}
               onChange={handleChange}
               required
@@ -91,6 +117,17 @@ const LoginPage: React.FC = () => {
             />
           </div>
 
+          {/* Options */}
+          <div className="auth-options">
+            <label className="remember-me">
+              <input type="checkbox" name="remember" /> Remember me
+            </label>
+            <Link to="#" className="forgot-password">
+              Forgot Password?
+            </Link>
+          </div>
+
+          {/* Submit */}
           <div className="form-actions">
             <button
               type="submit"
@@ -100,16 +137,21 @@ const LoginPage: React.FC = () => {
               {isSubmitting ? (
                 <span className="loading-spinner">Signing In...</span>
               ) : (
-                'Sign In'
+                <span>
+                  <Link to="/dashboard" className="auth-link-SignIn">
+                    Login
+                  </Link>
+                </span>
               )}
             </button>
           </div>
 
+          {/* Footer */}
           <div className="auth-footer">
             <p>
-              Don't have an account?{' '}
-              <Link to="/register" className="auth-link">
-                Sign up here
+              Don’t have an account?{' '}
+              <Link to="/register" className="auth-link-SignUp">
+                Register here
               </Link>
             </p>
           </div>

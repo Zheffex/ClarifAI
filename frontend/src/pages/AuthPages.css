@@ -1,24 +1,27 @@
 /* Authentication Pages Styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+
 .auth-container {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0F131F;
 }
 
 .auth-card {
   flex: 1;
-  max-width: 500px;
-  margin: auto;
+  max-width: 50%;
+  border-radius: 10px;
   background: white;
-  border-radius: 12px;
-  padding: 3rem;
+  padding: 1.5rem;
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   animation: slideInUp 0.6s ease-out;
 }
 
+/* empty for now */
 .auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
+  text-align: left;
+  margin-bottom: 40px;
 }
 
 .auth-logo {
@@ -32,21 +35,29 @@
 }
 
 .auth-title {
+  font-family: 'Poppins';
   font-size: 1.8rem;
   color: #333;
   margin-bottom: 0.5rem;
 }
 
+.auth-titles {
+  font-family: 'Poppins';
+  font-weight: 400;
+}
+
 .auth-subtitle {
+  margin-top: -15px;
+  font-family: 'Poppins';
   color: #666;
   font-size: 1rem;
-  margin: 0;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  font-family: 'Poppins';
+  font-weight: 500;
 }
 
 .form-row {
@@ -63,7 +74,10 @@
   flex-direction: column;
 }
 
+
+
 .form-label {
+  text-align: left;
   font-weight: 500;
   color: #333;
   margin-bottom: 0.5rem;
@@ -236,10 +250,36 @@
   opacity: 0.3;
 }
 
+/* remember me and fogot pass */
+.auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 6px; 
+  color: #000000;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.remember-me input {
+  width: 16px;
+  height: 16px;
+  accent-color: #94ff66; /* customize checkbox color */
+  cursor: pointer;
+}
+
 /* Forgot password link */
 .forgot-password {
-  text-align: center;
-  margin-top: 1rem;
+  text-decoration: none;
+  color: #5283FF;
+  text-align: right;
+  margin-top: 0px;
 }
 
 .form-input:disabled {
@@ -260,10 +300,10 @@
 .auth-button {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3F7AF8;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 30px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -294,10 +334,15 @@
 }
 
 .loading-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+
 }
 
 .loading-spinner::before {
@@ -312,7 +357,7 @@
 
 .auth-footer {
   text-align: center;
-  margin-top: 2rem;
+  margin-top: 4rem;
   padding-top: 2rem;
   border-top: 1px solid #e1e5e9;
 }
@@ -322,7 +367,14 @@
   margin: 0;
 }
 
-.auth-link {
+.auth-link-SignIn {
+  color: #fafafa;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.auth-link-SignUp {
   color: #667eea;
   text-decoration: none;
   font-weight: 500;
@@ -349,7 +401,7 @@
 }
 
 .info-card h3 {
-  font-size: 1.8rem;
+  font-size: 76px;
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -370,6 +422,20 @@
 .info-card li:last-child {
   border-bottom: none;
 }
+
+.info-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* space between image and text */
+}
+
+.info-image {
+  margin-top: 56px;
+  width: 100px;     /* adjust size as needed */
+  height: auto;
+  border-radius: 8px; /* optional rounded corners */
+}
+
 
 .feature-list {
   display: flex;

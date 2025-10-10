@@ -7,13 +7,14 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { CollaborationProvider } from './contexts/CollaborationContext';
 
 // Import page components
+import LandingPage from "./pages/LandingPage";
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import DatasetsPage from './pages/DatasetsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import CollaborationPage from './pages/CollaborationPage';
-import LandingPage from "./pages/LandingPage";
+
 
 
 // Import components
@@ -33,7 +34,7 @@ function App() {
               <div className="App">
                 <Routes>
                   {/* Public routes */}
-                  <Route path="/login" element={<LandingPage />} />
+                  <Route path="/" element={<LandingPage />} />
                    <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   
@@ -63,6 +64,14 @@ function App() {
                   } />
                   
                   <Route path="/collaboration/*" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <CollaborationPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/landing/*" element={
                     <ProtectedRoute>
                       <Layout>
                         <CollaborationPage />
