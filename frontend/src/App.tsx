@@ -13,6 +13,8 @@ import DashboardPage from './pages/DashboardPage';
 import DatasetsPage from './pages/DatasetsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import CollaborationPage from './pages/CollaborationPage';
+import LandingPage from "./pages/LandingPage";
+
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -31,17 +33,10 @@ function App() {
               <div className="App">
                 <Routes>
                   {/* Public routes */}
-                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/login" element={<LandingPage />} />
+                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   
-                  {/* Protected routes */}
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <DashboardPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
                   
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
