@@ -4,17 +4,26 @@ import "./LandingPage.css";
 
 const Header: React.FC = () => (
   <header className="site-header">
-    <div className="nav-inner">
-      <div className="brand">
-        <img
-          src="/images/clarifailogo.png"
-          alt="ClarifAI logo"
-          className="brand-logo"
-        />
-        <span className="brand-text">ClarifAI</span>
-      </div>
+  <div className="nav-inner">
+    <div className="brand">
+      <img
+        src="logo192.png"
+        alt="ClarifAI logo"
+        className="brand-logo"
+      />
+      <span className="brand-text">ClarifAI</span>
     </div>
-  </header>
+
+    <div className="nav-actions">
+      <button className="login-button">
+        <Link to="/login" className="login-button">
+          login
+        </Link>
+      </button>
+    </div>
+  </div>
+</header>
+
 );
 
 const Hero: React.FC = () => (
@@ -41,7 +50,7 @@ const Hero: React.FC = () => (
 
       <div className="hero-image-wrap">
         <img
-          src="/images/hero.png"
+          src="hero.png"
           alt="Laptop illustration"
           className="hero-image"
         />
