@@ -423,30 +423,8 @@ const RegisterPage: React.FC = () => {
 
       <div className="auth-info">
         <div className="info-card">
-          <h3>Why Choose ClarifAI?</h3>
-          <div className="feature-list">
-            <div className="feature-item">
-              <div className="feature-icon">🚀</div>
-              <div>
-                <h4>Fast Setup</h4>
-                <p>Get started in minutes with our intuitive interface</p>
-              </div>
-            </div>
-            <div className="feature-item">
-              <div className="feature-icon">🔍</div>
-              <div>
-                <h4>Smart Analytics</h4>
-                <p>AI-powered insights from your data</p>
-              </div>
-            </div>
-            <div className="feature-item">
-              <div className="feature-icon">🤝</div>
-              <div>
-                <h4>Team Collaboration</h4>
-                <p>Share and collaborate on data insights</p>
-              </div>
-            </div>
-          </div>
+          <h3>ClarifAI</h3>
+    
         </div>
       </div>
     </div>

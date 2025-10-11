@@ -14,6 +14,7 @@ import DashboardPage from './pages/DashboardPage';
 import DatasetsPage from './pages/DatasetsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import CollaborationPage from './pages/CollaborationPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 
 
@@ -37,6 +38,7 @@ function App() {
                   <Route path="/" element={<LandingPage />} />
                    <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   
                   
                   <Route path="/dashboard" element={

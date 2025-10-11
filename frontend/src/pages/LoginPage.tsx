@@ -119,13 +119,13 @@ const LoginPage: React.FC = () => {
 
           {/* Options */}
           <div className="auth-options">
-            <label className="remember-me">
-              <input type="checkbox" name="remember" /> Remember me
-            </label>
-            <Link to="#" className="forgot-password">
-              Forgot Password?
-            </Link>
-          </div>
+  <label className="remember-me">
+    <input type="checkbox" name="remember" /> Remember me
+  </label>
+  <Link to="/forgot-password" className="forgot-password">
+    Forgot Password?
+  </Link>
+</div>
 
           {/* Submit */}
           <div className="form-actions">
