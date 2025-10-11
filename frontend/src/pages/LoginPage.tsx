@@ -138,7 +138,7 @@ const LoginPage: React.FC = () => {
                 <span className="loading-spinner">Signing In...</span>
               ) : (
                 <span>
-                  <Link to="/dashboard" className="auth-link-SignIn">
+                  <Link to="/dashboard" className="auth-link-In">
                     Login
                   </Link>
                 </span>

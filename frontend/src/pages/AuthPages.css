@@ -362,6 +362,7 @@
 }
 
 .auth-footer {
+  text-decoration: none;
   text-align: center;
   margin-top: 4rem;
   padding-top: 2rem;
@@ -373,8 +374,16 @@
   margin: 0;
 }
 
+.auth-link-In {
+  color:#fafafa;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+
 .auth-link-SignIn {
-  color: #fafafa;
+  color: #667eea;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
@@ -404,6 +413,14 @@
 
 .info-card {
   max-width: 400px;
+  display: flex;          
+  flex-direction: row;     
+  align-items: center;    
+  gap: 1rem;             
+}
+
+.info-card img {
+  margin-top: -22px;
 }
 
 .info-card h3 {
@@ -436,7 +453,7 @@
 }
 
 .info-image {
-  margin-top: -24px;
+  margin-top: -2px;
   width: 100px;     /* adjust size as needed */
   height: auto;
   border-radius: 8px; /* optional rounded corners */
