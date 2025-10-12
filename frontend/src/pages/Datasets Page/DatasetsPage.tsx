@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
-import { useDataset } from '../contexts/DatasetContext';
-import { useNotification } from '../contexts/NotificationContext';
-import { Dataset } from '../types';
+import { useDataset } from '../../contexts/DatasetContext';
+import { useNotification } from '../../contexts/NotificationContext';
+import { Dataset } from '../../types';
 import './DatasetsPage.css';
 
 // Dataset components
@@ -37,6 +37,7 @@ const DatasetCard: React.FC<{
   };
 
   return (
+    
     <div className="dataset-card" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
       <div className="dataset-header">
         <div className="dataset-icon">📄</div>
@@ -365,13 +366,7 @@ const DatasetsMainPage: React.FC = () => {
       }
     });
 
-  if (isLoading) {
-    return (
-      <div className="datasets-loading">
-        <div className="loading-spinner">Loading datasets...</div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="datasets-page">

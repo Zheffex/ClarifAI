@@ -1,5 +1,6 @@
+
 .sidebar {
-  width: 240px;
+  max-height: 600px;
   background: #0b1220;
   border-right: 1px solid #1f2937;
   display: flex;
@@ -9,6 +10,7 @@
 }
 
 .sidebar-header {
+  color: white;
   text-align: center;
 }
 
@@ -19,6 +21,7 @@
 }
 
 .sidebar-nav {
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -40,7 +43,7 @@
   color: #ffffff;
 }
 
-.sidebar-link.active {
+.sidebar-link.hover {
   background: linear-gradient(90deg, #b5cdff, #ffffff);
   color: #0b1220;
   font-weight: 600;

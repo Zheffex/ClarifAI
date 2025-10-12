@@ -10,7 +10,7 @@ import { CollaborationProvider } from './contexts/CollaborationContext';
 import LandingPage from "./pages/Landing Page/LandingPage";
 import LoginPage from './pages/Authentication Pages/LoginPage';
 import RegisterPage from './pages/Authentication Pages/RegisterPage';
-// import DatasetsPage from './pages/Datasets Page/DatasetsPage';
+import DatasetsPage from './pages/Datasets Page/DatasetsPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
 import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
 import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
@@ -40,6 +40,7 @@ function App() {
                    <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                   <Route path="/Datasets" element={<DatasetsPage/>} />
                    <Route path="/Dashboard" element={<DashboardPage />} />
                   
                   
@@ -51,13 +52,13 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* <Route path="/datasets/*" element={
+                  <Route path="/datasets/*" element={
                     <ProtectedRoute>
                       <Layout>
                         <DatasetsPage />
                       </Layout>
                     </ProtectedRoute>
-                  } /> */}
+                  } />
 
                                     <Route path="/analytics/*" element={
                     <ProtectedRoute>
