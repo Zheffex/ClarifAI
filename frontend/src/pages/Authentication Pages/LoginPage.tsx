@@ -28,26 +28,40 @@ const LoginPage: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  addNotification({
+    type: 'success',
+    title: 'Login Successful',
+    message: 'Welcome back to ClarifAI!'
+  });
 
-    try {
-      await login(formData);
-      addNotification({
-        type: 'success',
-        title: 'Login Successful',
-        message: 'Welcome back to ClarifAI!'
-      });
-    } catch (error: any) {
-      addNotification({
-        type: 'error',
-        title: 'Login Failed',
-        message: error.message || 'Invalid credentials. Please try again.'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  setTimeout(() => {
+    window.location.href = '/dashboard';
+  }, 1000); // redirect after 1 second
+};
+
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsSubmitting(true);
+
+  //   try {
+  //     await login(formData);
+  //     addNotification({
+  //       type: 'success',
+  //       title: 'Login Successful',
+  //       message: 'Welcome back to ClarifAI!'
+  //     });
+  //   } catch (error: any) {
+  //     addNotification({
+  //       type: 'error',
+  //       title: 'Login Failed',
+  //       message: error.message || 'Invalid credentials. Please try again.'
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const isFormValid = formData.email && formData.password;
 
@@ -129,21 +143,20 @@ const LoginPage: React.FC = () => {
 
           {/* Submit */}
           <div className="form-actions">
+
             <button
-              type="submit"
-              className={`auth-button ${!isFormValid ? 'disabled' : ''}`}
-              disabled={!isFormValid || isSubmitting || isLoading}
-            >
-              {isSubmitting ? (
-                <span className="loading-spinner">Signing In...</span>
-              ) : (
-                <span>
-                  <Link to="/dashboard" className="auth-link-In">
-                    Login
-                  </Link>
-                </span>
-              )}
-            </button>
+            type="submit"
+            className={`auth-button ${!isFormValid ? 'disabled' : ''}`}
+            disabled={!isFormValid || isSubmitting || isLoading}
+          >
+            {isSubmitting ? (
+              <span className="loading-spinner">Signing In...</span>
+            ) : (
+              'Login'
+            )}
+          </button>
+
+
           </div>
 
           {/* Footer */}

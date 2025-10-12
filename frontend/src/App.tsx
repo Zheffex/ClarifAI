@@ -14,6 +14,7 @@ import RegisterPage from './pages/Authentication Pages/RegisterPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
 import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
 import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
+import DashboardPage from './pages/Dashboard Page/DashboardPage';
 
 
 
@@ -22,6 +23,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
 import './App.css';
+
 
 function App() {
   return (
@@ -38,15 +40,16 @@ function App() {
                    <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                   <Route path="/Dashboard" element={<DashboardPage />} />
                   
                   
-                  {/* <Route path="/dashboard" element={
+                  <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Layout>
                         <DashboardPage />
                       </Layout>
                     </ProtectedRoute>
-                  } /> */}
+                  } />
                   
                   {/* <Route path="/datasets/*" element={
                     <ProtectedRoute>

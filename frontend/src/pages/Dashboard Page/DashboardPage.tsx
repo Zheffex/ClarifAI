@@ -79,7 +79,7 @@ const DashboardPage: React.FC = () => {
           <button 
             className="action-btn primary"
             onClick={() => navigate('/analytics/new')}
-          >
+          >   
             <span className="btn-icon">📈</span>
             New Analysis
           </button>
@@ -106,7 +106,7 @@ const DashboardPage: React.FC = () => {
           <div className="stat-icon analyses">🔍</div>
           <div className="stat-content">
             <div className="stat-number">{stats.totalAnalyses}</div>
-            <div className="stat-label">Analyses</div>
+            <div className="stat-label">Analysis</div>
           </div>
         </div>
         
