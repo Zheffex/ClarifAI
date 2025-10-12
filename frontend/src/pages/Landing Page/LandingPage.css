@@ -163,7 +163,7 @@ main {
 .link-underline {
   color: #1f3a73;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 1000;
 }
 
 .link-underline:hover {
@@ -178,9 +178,9 @@ main {
 }
 
 .hero-image {
-  width: 100%;
-  height: 380px;
-  max-width: 450px;
+  width: 600%;
+  height: 500px;
+  max-width: 500px;
   filter: drop-shadow(0 8px 25px rgba(16, 30, 60, 0.25));
 }
 
@@ -189,7 +189,7 @@ main {
   background: #0b1220;
   color: #9fb0d8;
   text-align: center;
-  padding: 33px 0;
+  padding: 7px 0;
   font-size: 15px;
   width: 100%;
   margin-top: 5%;
