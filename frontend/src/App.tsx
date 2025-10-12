@@ -7,14 +7,13 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { CollaborationProvider } from './contexts/CollaborationContext';
 
 // Import page components
-import LandingPage from "./pages/LandingPage";
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import DatasetsPage from './pages/DatasetsPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import CollaborationPage from './pages/CollaborationPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import LandingPage from "./pages/Landing Page/LandingPage";
+import LoginPage from './pages/Authentication Pages/LoginPage';
+import RegisterPage from './pages/Authentication Pages/RegisterPage';
+// import DatasetsPage from './pages/DatasetsPage';
+import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
+import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
+// import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 
 
@@ -38,10 +37,10 @@ function App() {
                   <Route path="/" element={<LandingPage />} />
                    <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
-                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                   {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
                   
                   
-                  <Route path="/dashboard" element={
+                  {/* <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Layout>
                         <DashboardPage />
@@ -55,7 +54,7 @@ function App() {
                         <DatasetsPage />
                       </Layout>
                     </ProtectedRoute>
-                  } />
+                  } /> */}
                   
                   <Route path="/analytics/*" element={
                     <ProtectedRoute>

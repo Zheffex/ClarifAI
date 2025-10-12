@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import LoginPage from '../../pages/LoginPage';
+import LoginPage from '../../pages/Authentication Pages/LoginPage';
 import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mock the fetch function

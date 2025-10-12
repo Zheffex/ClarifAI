@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useNotification } from '../contexts/NotificationContext';
-import { LoginCredentials } from '../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
+import { LoginCredentials } from '../../types';
 import './AuthPages.css';
 
 const LoginPage: React.FC = () => {

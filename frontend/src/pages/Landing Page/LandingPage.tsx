@@ -30,6 +30,8 @@ const Hero: React.FC = () => (
   <section className="hero" aria-label="Hero Section">
     <div className="container hero-grid">
       <div className="hero-content">
+
+        <title>ClarifAI</title>
         <h1 className="hero-title">Unlock the Feature of Data. Instantly</h1>
         <p className="hero-desc">
           ClarifAI transforms complex raw data into actionable, predictive insights.

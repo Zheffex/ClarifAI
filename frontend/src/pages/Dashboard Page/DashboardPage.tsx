@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useDataset } from '../contexts/DatasetContext';
-import { useAnalytics } from '../contexts/AnalyticsContext';
-import { dashboardService, DashboardStats } from '../services/dashboardService';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDataset } from '../../contexts/DatasetContext';
+import { useAnalytics } from '../../contexts/AnalyticsContext';
+import { dashboardService, DashboardStats } from '../../services/dashboardService';
 import './DashboardPage.css';
 
 const DashboardPage: React.FC = () => {
