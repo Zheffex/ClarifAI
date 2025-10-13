@@ -6,26 +6,34 @@ import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { CollaborationProvider } from './contexts/CollaborationContext';
 
-// Import page components
+// Pages
 import LandingPage from "./pages/Landing Page/LandingPage";
 import LoginPage from './pages/Authentication Pages/LoginPage';
 import RegisterPage from './pages/Authentication Pages/RegisterPage';
+import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
+import DashboardPage from './pages/Dashboard Page/DashboardPage';
 import DatasetsPage from './pages/Datasets Page/DatasetsPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
 import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
-import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
-import DashboardPage from './pages/Dashboard Page/DashboardPage';
+import ProfilePage from './pages/ProfilePage/ProfilePage';
 
 
-
-// Import components
-import ProtectedRoute from './components/ProtectedRoute';
-import Layout from './components/Layout';
+// Sidebar
+import Sidebar from './components/Sidebar/Sidebar';
 
 import './App.css';
 
+// Layout wrapper for pages with sidebar
+const LayoutWithSidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="app-layout" style={{ display: 'flex', minHeight: '100vh' }}>
+    <Sidebar />
+    <main className="main-content" style={{ flex: 1, padding: '20px' }}>
+      {children}
+    </main>
+  </div>
+);
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
@@ -33,69 +41,25 @@ function App() {
           <DatasetProvider>
             <AnalyticsProvider>
               <NotificationProvider>
-              <div className="App">
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<LandingPage />} />
-                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                   <Route path="/Datasets" element={<DatasetsPage/>} />
-                   <Route path="/Dashboard" element={<DashboardPage />} />
-                  
-                  
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <DashboardPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/datasets/*" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <DatasetsPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
+                <div className="App">
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                                    <Route path="/analytics/*" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <ForgotPasswordPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/analytics/*" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <AnalyticsPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/collaboration/*" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <CollaborationPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
+                    {/* Protected Routes with Sidebar */}
+                    <Route path="/dashboard" element={<LayoutWithSidebar><DashboardPage /></LayoutWithSidebar>} />
+                    <Route path="/datasets/*" element={<LayoutWithSidebar><DatasetsPage /></LayoutWithSidebar>} />
+                    <Route path="/profile" element={<LayoutWithSidebar><ProfilePage /></LayoutWithSidebar>}/>
+                    <Route path="/analytics/*" element={<LayoutWithSidebar><AnalyticsPage /></LayoutWithSidebar>} />
+                    <Route path="/collaboration/*" element={<LayoutWithSidebar><CollaborationPage /></LayoutWithSidebar>} />
 
-                  <Route path="/landing/*" element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <CollaborationPage />
-                      </Layout>
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Redirect unknown routes to dashboard */}
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-              </div>
+                    {/* Redirect unknown routes */}
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                  </Routes>
+                </div>
               </NotificationProvider>
             </AnalyticsProvider>
           </DatasetProvider>
@@ -103,6 +67,6 @@ function App() {
       </AuthProvider>
     </Router>
   );
-}
+};
 
 export default App;

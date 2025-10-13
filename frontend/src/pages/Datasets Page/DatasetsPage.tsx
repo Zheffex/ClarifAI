@@ -423,14 +423,7 @@ const DatasetsMainPage: React.FC = () => {
         </div>
         
         <div className="controls-right">
-          {selectedDatasets.length > 0 && (
-            <div className="bulk-actions">
-              <span className="selection-count">{selectedDatasets.length} selected</span>
-              <button className="btn-danger" onClick={handleBulkDelete}>
-                Delete Selected
-              </button>
-            </div>
-          )}
+          {/* Upload button removed since it already exists at the top */}
           
           <div className="view-toggle">
             <button 
@@ -463,23 +456,14 @@ const DatasetsMainPage: React.FC = () => {
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-icon">📁</div>
-            <h3>{datasets.length === 0 ? 'No datasets yet' : 'No datasets match your search'}</h3>
-            <p>
-              {datasets.length === 0 
-                ? 'Upload your first dataset to get started with AI-powered analytics.'
-                : 'Try adjusting your search terms or filters.'
-              }
-            </p>
-            {datasets.length === 0 && (
-              <button 
-                className="btn-primary"
-                onClick={() => setShowUploadModal(true)}
-              >
-                Upload Dataset
-              </button>
-            )}
-          </div>
+  <img 
+    src="emptydatasets.png" 
+    alt="No datasets illustration" 
+    className="empty-image"
+  />
+  <h3>{datasets.length === 0 ? '' : 'No datasets match your search'}</h3>
+  
+</div>
         )}
       </div>
 

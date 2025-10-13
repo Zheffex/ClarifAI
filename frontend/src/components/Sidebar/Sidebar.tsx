@@ -1,43 +1,56 @@
+// Sidebar.tsx
 import React from "react";
-import { LayoutDashboard, Folder, BarChart2, Settings, LogOut, User, Users } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Folder,
+  User,
+  BarChart2,
+  Users,
+  LogOut,
+} from "lucide-react";
 import "./Sidebar.css";
 
 const Sidebar: React.FC = () => {
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-
-        <h2>ClarifAI</h2>
+    <aside className="sb-root">
+      <div className="sb-top">
+        <div className="sb-brand">ClarifAI</div>
       </div>
 
-      <nav className="sidebar-nav">
-        <a href="/dashboard" className="sidebar-link active">
-          <LayoutDashboard size={20} />
+      <nav className="sb-nav">
+        <NavLink to="/dashboard" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
+          <div className="sb-icon"><LayoutDashboard size={18} /></div>
           <span>Dashboard</span>
-        </a>
-        <a href="/datasets" className="sidebar-link">
-          <Folder size={20} />
+        </NavLink>
+
+        <NavLink to="/datasets" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
+          <div className="sb-icon"><Folder size={18} /></div>
           <span>Datasets</span>
-        </a>
-        <a href="/analytics" className="sidebar-link">
-          <BarChart2 size={20} />
-          <span>AI Analytics</span>
-        </a>
-        <a href="/settings" className="sidebar-link">
-          <User size={20} />
+        </NavLink>
+
+        <NavLink to="/profile" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
+          <div className="sb-icon"><User size={18} /></div>
           <span>Profile</span>
-        </a>
-        <a href="/settings" className="sidebar-link">
-          <Users size={20} />
-          <span>Collaborations</span>
-        </a>
+        </NavLink>
+
+        <NavLink to="/analytics" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
+          <div className="sb-icon"><BarChart2 size={18} /></div>
+          <span>AI analytics</span>
+        </NavLink>
+
+        <NavLink to="/collaboration" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
+          <div className="sb-icon"><Users size={18} /></div>
+          <span>Collaboration</span>
+        </NavLink>
       </nav>
 
-      <div className="sidebar-footer">
-        <a href="/Landing" className="sidebar-link logout">
-          <LogOut size={20} />
-          <span>Logout</span>
-        </a>
+      <div className="sb-bottom">
+        <hr className="sb-divider" />
+        <NavLink to="/landing" className="sb-link logout">
+          <div className="sb-icon"><LogOut size={18} /></div>
+          <span>Log out</span>
+        </NavLink>
       </div>
     </aside>
   );
