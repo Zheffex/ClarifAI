@@ -171,7 +171,9 @@ const DashboardPage: React.FC = () => {
 
         <div className="dp-stats-row">
           <div className="dp-stat-card">
-            <div className="dp-stat-icon">📁</div>
+            <div className="dp-stat-icon">
+              <img src="datset.png" alt="dataset-img" />
+              </div>
             <div className="dp-stat-body">
               <div className="dp-stat-label">Datasets</div>
               <div className="dp-stat-num">{stats.totalDatasets}</div>
@@ -179,7 +181,9 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="dp-stat-card">
-            <div className="dp-stat-icon">📊</div>
+            <div className="dp-stat-icon">
+              <img src="analysis.png" alt="analysis-img" />
+              </div>
             <div className="dp-stat-body">
               <div className="dp-stat-label">Analysis</div>
               <div className="dp-stat-num">{stats.totalAnalyses}</div>
@@ -187,7 +191,9 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="dp-stat-card">
-            <div className="dp-stat-icon">⚡</div>
+            <div className="dp-stat-icon">
+              <img src="recent.png" alt="recent-img" />
+            </div>
             <div className="dp-stat-body">
               <div className="dp-stat-label">Recent Activity</div>
               <div className="dp-stat-num">{stats.recentActivity}</div>
@@ -195,7 +201,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="dp-stat-card">
-            <div className="dp-stat-icon">🤝</div>
+            <div className="dp-stat-icon"><img src="collaboration.png" alt="collaboration-img" /></div>
             <div className="dp-stat-body">
               <div className="dp-stat-label">Collaboration</div>
               <div className="dp-stat-num">{stats.collaborations}</div>
