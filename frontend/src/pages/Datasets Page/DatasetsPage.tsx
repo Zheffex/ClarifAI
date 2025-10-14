@@ -373,6 +373,7 @@ const DatasetsMainPage: React.FC = () => {
       <div className="page-header">
         <div className="header-content">
           <div className="header-text">
+            <title>Datasets</title>
             <h1>Datasets</h1>
             <p>Manage and analyze your data collections</p>
           </div>
@@ -456,14 +457,14 @@ const DatasetsMainPage: React.FC = () => {
           </div>
         ) : (
           <div className="empty-state">
-  <img 
-    src="emptydatasets.png" 
-    alt="No datasets illustration" 
-    className="empty-image"
-  />
-  <h3>{datasets.length === 0 ? '' : 'No datasets match your search'}</h3>
-  
-</div>
+          <img 
+            src="emptydatasets.png" 
+            alt="No datasets illustration" 
+            className="empty-image"
+          />
+          <h3>{datasets.length === 0 ? '' : 'No datasets match your search'}</h3>
+          
+        </div>
         )}
       </div>
 

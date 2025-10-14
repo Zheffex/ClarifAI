@@ -144,6 +144,7 @@ const DashboardPage: React.FC = () => {
       <div className="dp-main">
         <div className="dp-top">
           <div>
+            <title>Dashboard</title>
             <h1 className="dp-title">Dashboard</h1>
             <div className="dp-sub"> {greeting} {user?.firstName || ""}</div>
           </div>

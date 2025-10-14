@@ -25,9 +25,11 @@ html, body {
 /* Sidebar is fixed inside Sidebar component; main content scrolls */
 .dp-main {
   flex: 1;
+  font-family: 'poppins';
+  margin-top: -60px;
   padding: 0 28px 28px 28px; /* removed top padding */
   box-sizing: border-box;
-  overflow-y: auto; /* makes the right panel scrollable independently */
+  overflow-y: hidden; /* makes the right panel scrollable independently */
 }
 
 /* Top header area */

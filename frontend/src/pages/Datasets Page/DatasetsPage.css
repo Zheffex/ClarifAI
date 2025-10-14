@@ -1,8 +1,10 @@
 /* Datasets Page Styles */
 .datasets-page {
+  font-family: 'poppins';
   padding: 2rem;
   max-width: 1400px;
-  margin: 0 auto;
+  margin-top: -80px;
+  margin-left: 200px;
 }
 
 .datasets-loading {
@@ -320,7 +322,10 @@
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
-  color: #6b7280;
+}
+
+.empty-image{
+  max-width: 240px;
 }
 
 .empty-icon {
@@ -344,6 +349,8 @@
 
 /* Buttons */
 .btn-primary {
+  font-family: 'poppins';
+  font-weight: 200;
   background: #3b82f6;
   color: white;
   border: none;
