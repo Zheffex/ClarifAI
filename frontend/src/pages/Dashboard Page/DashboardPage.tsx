@@ -1,5 +1,6 @@
 // DashboardPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDataset } from "../../contexts/DatasetContext";
@@ -24,18 +25,21 @@ const DashboardPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  // For header animation
+  const [animateHeader, setAnimateHeader] = useState(false);
+
+
   // UI state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  useEffect(() => {
+    useEffect(() => {
     const load = async () => {
       try {
         const s = await dashboardService.getStats();
         setStats(s);
-        // Keep existing dataset/session fetchers working
         await Promise.all([fetchDatasets(), fetchSessions()]);
       } catch (err) {
         console.error("dashboard load failed", err);
@@ -44,7 +48,13 @@ const DashboardPage: React.FC = () => {
       }
     };
     load();
+
+    // 🟢 Trigger animation when Dashboard mounts
+    setAnimateHeader(false);
+    const timer = setTimeout(() => setAnimateHeader(true), 10);
+    return () => clearTimeout(timer);
   }, [fetchDatasets, fetchSessions]);
+
 
   const onSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,12 +147,9 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="dp-root">
-      {/* Fixed sidebar */}
-      <Sidebar />
-
-      {/* Main content — scrollable independently */}
       <div className="dp-main">
-        <div className="dp-top">
+        <div className={`dp-top ${animateHeader ? "slide" : ""}`}>
+
           <div>
             <title>Dashboard</title>
             <h1 className="dp-title">Dashboard</h1>
@@ -151,6 +158,7 @@ const DashboardPage: React.FC = () => {
 
           <div className="dp-controls">
             <form className="dp-search" onSubmit={onSearchSubmit}>
+              {/* <Search className="dp-search-icon" /> */}
               <input
                 className="dp-search-input"
                 placeholder="Search Here..."
