@@ -1,6 +1,7 @@
 /* Datasets Page Styles */
 .datasets-page {
   font-family: 'poppins';
+  font-size: 15px;
   padding: 2rem;
   max-width: 1400px;
   margin-top: -80px;
@@ -33,7 +34,8 @@
 }
 
 .header-text h1 {
-  font-size: 2rem;
+  font-family: 'Poppins';
+
   font-weight: 700;
   color: #111827;
   margin: 0 0 0.5rem 0;
@@ -411,6 +413,14 @@
 .btn-icon {
   font-size: 1rem;
 }
+
+.btn-icon img {
+  width: 20px; 
+  height: 20px;
+  object-fit: contain;
+  margin-bottom: -5px;
+}
+
 
 /* Modal Styles */
 .modal-overlay {

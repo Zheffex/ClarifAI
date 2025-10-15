@@ -4,6 +4,7 @@ import { useDataset } from '../../contexts/DatasetContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { Dataset } from '../../types';
 import './DatasetsPage.css';
+import { Folder } from 'lucide-react';
 
 // Dataset components
 const DatasetCard: React.FC<{ 
@@ -381,7 +382,9 @@ const DatasetsMainPage: React.FC = () => {
             className="btn-primary"
             onClick={() => setShowUploadModal(true)}
           >
-            <span className="btn-icon">📁</span>
+            <span className="btn-icon">
+              <img src="./datset.png" alt="Folder-icon" />
+            </span>
             Upload Dataset
           </button>
         </div>
