@@ -44,6 +44,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="profile-page">
+      <title>Profile</title>
       <h1 className="profile-title">Profile</h1>
 
       <div className="profile-card">
@@ -166,7 +167,7 @@ const ProfilePage: React.FC = () => {
                   name="currentPassword"
                   value={passwordForm.currentPassword}
                   onChange={handlePasswordChange}
-                  className="input-field"
+                  className="input-field-password"
                 />
                 <label>New Password</label>
                 <input
@@ -174,7 +175,7 @@ const ProfilePage: React.FC = () => {
                   name="newPassword"
                   value={passwordForm.newPassword}
                   onChange={handlePasswordChange}
-                  className="input-field"
+                  className="input-field-password-1"
                 />
                 <label>Confirm New Password</label>
                 <input
@@ -182,10 +183,10 @@ const ProfilePage: React.FC = () => {
                   name="confirmPassword"
                   value={passwordForm.confirmPassword}
                   onChange={handlePasswordChange}
-                  className="input-field"
+                  className="input-field-password-2"
                 />
               </div>
-              <button className="btn save" onClick={changePassword}>
+              <button className="btn-change" onClick={changePassword}>
                 Change Password
               </button>
             </div>

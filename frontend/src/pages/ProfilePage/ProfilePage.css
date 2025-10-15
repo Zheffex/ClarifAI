@@ -8,6 +8,9 @@ body, html {
 }
 
 .profile-page {
+  font-family: 'poppins';
+  margin-top: -110px;
+  margin-left: 230px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -19,22 +22,22 @@ body, html {
 
 .profile-title {
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 900;
   margin-bottom: 25px;
 }
 
 .profile-card {
   background: linear-gradient(180deg, #1e3a8a, #3b82f6);
   padding: 30px;
-  border-radius: 30px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 1200px;
+  max-width: 800px;
 }
 
 .profile-header {
   background: #ffffff;
   border-radius: 12px;
-  padding: 25px;
+  padding: 40px;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -68,9 +71,10 @@ body, html {
 }
 
 .personal-info-section {
+  width: 740px;
   background: #ffffff;
   border-radius: 12px;
-  padding: 25px;
+  padding: 40px;
   margin-top: 15px;
 }
 
@@ -83,36 +87,6 @@ body, html {
 .personal-info-header h3 {
   font-size: 18px;
   font-weight: 600;
-}
-
-.profile-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.btn {
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn.edit {
-  background: #000;
-  color: #fff;
-}
-
-.btn.change {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.btn.save {
-  background: #10b981;
-  color: #fff;
-  margin-top: 15px;
 }
 
 hr {
@@ -138,30 +112,120 @@ hr {
   font-weight: 500;
 }
 
+/* Personal Information */
+
 .input-field {
-  width: 100%;
+  margin-left: 24%;
+  width: 70%;
   padding: 8px 10px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
 }
 
-.password-section {
+.profile-buttons {
   display: flex;
-  flex-direction: column;
+  gap: 10px;
+}
+
+.btn {
+  font-family: 'poppins';
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn.edit {
+  background: #000;
+  color: #fff;
+}
+
+.btn.change {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.btn.save {
+  font-family: 'poppins';
+  margin-left: 20%;
+  width: 17%;
+  background: #10b981;
+  color: #fff;
+  margin-top: 30px;
+}
+
+.btn-save-container {
+  
+  text-align: right;
+}
+
+/* Change password */
+
+.password-section {
+  font-family: 'poppins' !important;  
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 400px;
+  margin: 20px auto;
+  font-family: "Inter", sans-serif;
 }
 
 .password-fields {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .password-fields label {
-  font-size: 13px;
-  color: #374151;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
 }
 
-.btn-save-container {
-  text-align: right;
+.input-field-password,
+.input-field-password-1,
+.input-field-password-2 {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #ffffff, #f1f1f1);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.05),
+              inset -2px -2px 4px rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+}
+
+.input-field-password:focus,
+.input-field-password-1:focus,
+.input-field-password-2:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+  outline: none;
+}
+
+.btn-change {
+  font-family: 'poppins';
+  margin-top: 20px;
+  width: 100%;
+  background: #10b981;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-change:hover {
+  background: linear-gradient(135deg, #006ae6, #004bb5);
+  box-shadow: 0 6px 14px rgba(0, 123, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-save:active {
+  transform: scale(0.98);
 }
