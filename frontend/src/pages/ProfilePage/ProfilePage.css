@@ -28,7 +28,7 @@ body, html {
 
 .profile-card {
   background: linear-gradient(180deg, #1e3a8a, #3b82f6);
-  padding: 30px;
+  padding: 10px;
   border-radius: 20px;
   width: 100%;
   max-width: 800px;
@@ -71,7 +71,7 @@ body, html {
 }
 
 .personal-info-section {
-  width: 740px;
+  width: 780px;
   background: #ffffff;
   border-radius: 12px;
   padding: 40px;

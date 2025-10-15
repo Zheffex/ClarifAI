@@ -348,6 +348,8 @@ const RegisterPage: React.FC = () => {
                   </span>
                 </div>
               )}
+
+              {/* CODE */}
               {showPasswordRequirements && (
                 <div className="password-requirements">
                   <p className="requirements-title">Password must contain:</p>

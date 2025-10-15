@@ -12,6 +12,7 @@ const LoginPage: React.FC = () => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [buttonMessage, setButtonMessage] = useState('Login');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,18 +24,28 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.email || !formData.password) return; // extra safety
+
     setIsSubmitting(true);
+    setButtonMessage('Signing In...');
 
-    addNotification({
-      type: 'success',
-      title: 'Login Successful',
-      message: 'Welcome back to ClarifAI!'
-    });
-
-    // ✅ Static redirect (no auth check)
+    // Simulate login request (you can later replace with actual API)
     setTimeout(() => {
-      navigate('/dashboard');
-    }, 1000);
+      addNotification({
+        type: 'success',
+        title: 'Login Successful',
+        message: 'Welcome back to ClarifAI!'
+      });
+
+      // Show success on button before redirect
+      setButtonMessage('✅ Successfully Logged In!');
+
+      // Wait a bit before navigating
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1200);
+    }, 1200);
   };
 
   const isFormValid = formData.email && formData.password;
@@ -56,7 +67,7 @@ const LoginPage: React.FC = () => {
         <div className="auth-header">
           <h2 className="auth-title">Welcome back!</h2>
           <p className="auth-subtitle">Please enter your details to login.</p>
-          <h2 className="auth-titles">SIGN IN</h2>
+          <title>Login</title>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -109,7 +120,7 @@ const LoginPage: React.FC = () => {
               className={`auth-button ${!isFormValid ? 'disabled' : ''}`}
               disabled={!isFormValid || isSubmitting}
             >
-              {isSubmitting ? 'Signing In...' : 'Login'}
+              {buttonMessage}
             </button>
           </div>
 

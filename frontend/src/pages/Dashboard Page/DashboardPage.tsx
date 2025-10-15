@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useDataset } from "../../contexts/DatasetContext";
 import { useAnalytics } from "../../contexts/AnalyticsContext";
 import { dashboardService, DashboardStats } from "../../services/dashboardService";
-import Sidebar from "../../components/Sidebar/Sidebar";
 import "./DashboardPage.css";
 
 import { Bell, Sliders } from "lucide-react";
