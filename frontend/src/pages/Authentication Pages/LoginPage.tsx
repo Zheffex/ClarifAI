@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationContext';
+import { authService } from '../../services/authService'; 
 import './AuthPages.css';
 
 const LoginPage: React.FC = () => {
@@ -22,30 +23,50 @@ const LoginPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email || !formData.password) return; // extra safety
+    if (!formData.email || !formData.password) return;
 
     setIsSubmitting(true);
     setButtonMessage('Signing In...');
 
-    // Simulate login request (you can later replace with actual API)
-    setTimeout(() => {
+    try {
+      // ✅ Call your real login API
+      const response = await authService.login({
+        email: formData.email,
+        password: formData.password
+      });
+      // ✅ Save token and user info
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      // ✅ Notify success
       addNotification({
         type: 'success',
         title: 'Login Successful',
-        message: 'Welcome back to ClarifAI!'
+        message: `Welcome back, ${response.user.firstName || 'User'}!`
       });
 
-      // Show success on button before redirect
-      setButtonMessage('✅ Successfully Logged In!');
+      setButtonMessage('Successfully Logged In!');
 
-      // Wait a bit before navigating
-      setTimeout(() => {
+      // ✅ Redirect to verify or dashboard depending on email verification
+     setTimeout(() => {
         navigate('/dashboard');
       }, 1200);
-    }, 1200);
+    } catch (error: any) {
+      // ❌ Notify error (invalid credentials or unregistered user)
+      addNotification({
+        type: 'error',
+        title: 'Login Failed',
+        message: error.message || 'Invalid email or password. Please try again.'
+      });
+
+      setButtonMessage('Login Failed ❌');
+      setTimeout(() => setButtonMessage('/Login'), 1500);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isFormValid = formData.email && formData.password;

@@ -1,3 +1,7 @@
+body{
+  
+}
+
 /* Datasets Page Styles */
 .datasets-page {
   font-family: 'poppins';
@@ -690,3 +694,4 @@
     padding: 1rem;
   }
 }
+

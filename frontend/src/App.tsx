@@ -11,6 +11,7 @@ import LandingPage from "./pages/Landing Page/LandingPage";
 import LoginPage from './pages/Authentication Pages/LoginPage';
 import RegisterPage from './pages/Authentication Pages/RegisterPage';
 import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
+import OtpPage from './pages/Authentication Pages/OtpPage';
 import DashboardPage from './pages/Dashboard Page/DashboardPage';
 import DatasetsPage from './pages/Datasets Page/DatasetsPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
@@ -20,7 +21,6 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 
 // Sidebar
 import Sidebar from './components/Sidebar/Sidebar';
-
 import './App.css';
 
 // Layout wrapper for pages with sidebar
@@ -49,6 +49,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/verify" element={<OtpPage />} />
 
 
                     {/* Protected Routes with Sidebar */}
@@ -59,7 +60,7 @@ const App: React.FC = () => {
                     <Route path="/collaboration/*" element={<LayoutWithSidebar><CollaborationPage /></LayoutWithSidebar>} />
 
                     {/* Redirect unknown routes */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
                   </Routes>
                 </div>
               </NotificationProvider>

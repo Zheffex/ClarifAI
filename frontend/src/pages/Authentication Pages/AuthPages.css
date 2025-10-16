@@ -1,6 +1,10 @@
 /* Authentication Pages Styles */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
+body{
+  zoom: normal 1 fixed;
+
+}
 
 .auth-container {
   display: flex;
@@ -30,7 +34,7 @@
 .auth-header {
   gap: 20px;
   margin-top: 25px;
-  margin-left: 65px;
+  margin-left: 60px;
   text-align: left;
   margin-bottom: 40px;
 }
@@ -66,7 +70,7 @@
 }
 
 .auth-form {
-  margin-left: 65px;
+  margin-left: 60px;
   max-width: 75%;
   display: flex;
   flex-direction: column;
@@ -126,8 +130,10 @@
 
 /* Field validation messages */
 .field-error {
+  font-family: 'Poppins';
   color: #ef4444;
-  font-size: 0.875rem;
+  font-size: 0.500rem;
+  font-weight: 700px !important;
   margin-top: 0.25rem;
   display: flex;
   align-items: center;
@@ -185,7 +191,7 @@
 /* Password requirements */
 .password-requirements {
   width: 340px;
-  margin-top: 3rem;
+  margin-top: 2rem;
   padding: 0.75rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -663,4 +669,180 @@
   width: 20px;
   height: 20px;
   object-fit: contain;
+}
+
+/* OtpPage */
+
+/* === Layout Wrapper === */
+.otp-container {
+  background-image: url('C:\Users\Johnr\Downloads\ClarifAI-main\frontend\public\Auth-Background .jpg') !important;
+  background-size: cover !important;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: fixed;
+  display: flex;
+  height: 100vh;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* === Left Info Section === */
+.otp-info-section {
+  flex: 1;
+
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.otp-heading {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 20px;
+}
+
+.otp-description {
+  font-size: 14px;
+  color: #ddd;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* === Right OTP Card === */
+.otp-card {
+  flex: 1;
+  background: #fdfdfd;
+  border-radius: 30px;
+  margin: 20px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 80px;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+}
+
+.otp-logo {
+  width: 55px;
+  margin-bottom: 16px;
+}
+
+.otp-title {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.otp-subtitle {
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+/* === Input === */
+.otp-input-group {
+  margin-bottom: 20px;
+}
+
+.otp-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.otp-required {
+  color: #e11d48;
+}
+
+.otp-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.otp-input:focus {
+  border-color: #002b9c;
+  box-shadow: 0 0 0 2px rgba(0, 43, 156, 0.1);
+}
+
+/* === Buttons === */
+.otp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.otp-button {
+  padding: 12px;
+  background-color: #001f73;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.otp-button:hover {
+  background-color: #002b9c;
+}
+
+.otp-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.otp-secondary-btn {
+  text-decoration: none;
+  padding: 12px;
+  background: #fff;
+  color: #111;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.otp-secondary-btn:hover {
+  background: #f7f7f7;
+}
+
+/* === Footer === */
+.otp-footer {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
+
+.otp-resend-link {
+  background: none;
+  border: none;
+  color: #002b9c;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+  .otp-container {
+    flex-direction: column;
+  }
+
+  .otp-info-section {
+    padding: 40px;
+    text-align: center;
+  }
+
+  .otp-card {
+    padding: 30px;
+  }
 }

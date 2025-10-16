@@ -4,9 +4,6 @@ import './AnalyticsPage.css';
 const AnalyticsPage: React.FC = () => {
   return (
     <div className="analytics-container">
-      {/* Sidebar Section */}
-
-
       {/* Main Analytics Content */}
       <div className="analytics-page">
         <div className="analytics-header">

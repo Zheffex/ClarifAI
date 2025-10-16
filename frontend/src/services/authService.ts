@@ -81,4 +81,15 @@ export const authService = {
       // Ignore logout errors
     }
   },
+
+     async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+    try {
+      const response = await api.post('/auth/verify-otp', { email, otp });
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'OTP verification failed');
+    }
+  },
+
+
 };

@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 // User types
 export interface User {
   _id: string;
@@ -7,6 +9,7 @@ export interface User {
   role: 'admin' | 'analyst' | 'viewer';
   organizationId?: string;
   preferences: Record<string, any>;
+  isEmailVerified: boolean;
   lastLogin?: Date;
   isActive: boolean;
   createdAt: Date;
@@ -15,6 +18,9 @@ export interface User {
 
 // Dataset types
 export interface Dataset {
+  status: any;
+  size: ReactNode;
+  type: ReactNode;
   _id: string;
   name: string;
   description?: string;

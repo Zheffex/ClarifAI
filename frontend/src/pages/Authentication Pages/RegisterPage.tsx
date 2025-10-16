@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { RegisterData } from '../../types';
+import { useNavigate } from 'react-router-dom';
 import './AuthPages.css';
 
 interface ValidationErrors {
@@ -14,6 +15,7 @@ interface ValidationErrors {
 }
 
 const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
   const { register, isLoading } = useAuth();
   const { addNotification } = useNotification();
   const [formData, setFormData] = useState<RegisterData>({
@@ -186,12 +188,18 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
+
       await register(formData);
+
       addNotification({
         type: 'success',
         title: 'Registration Successful',
         message: 'Welcome to ClarifAI! Your account has been created.'
+
       });
+      localStorage.setItem('email', formData.email)
+        navigate('/verify');
+
     } catch (error: any) {
       addNotification({
         type: 'error',
@@ -216,7 +224,7 @@ const RegisterPage: React.FC = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-
+          <title>Register</title>
           <h2 className="auth-title">Create Account</h2>
           <p className="auth-subtitle">Join ClarifAI and start analyzing your data with AI.</p>
         </div>
