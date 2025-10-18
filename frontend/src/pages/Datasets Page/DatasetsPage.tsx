@@ -467,17 +467,20 @@ const DatasetsMainPage: React.FC = () => {
             className="empty-image"
           />
           <h3>{datasets.length === 0 ? '' : 'No datasets match your search'}</h3>
-          
         </div>
         )}
-      </div>
 
+        <DatasetTable />
+
+      </div>
       <UploadModal 
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUpload={handleUpload}
       />
     </div>
+
+      
   );
 };
 
@@ -495,6 +498,97 @@ const DatasetsPage: React.FC = () => {
       <Route path="/" element={<DatasetsMainPage />} />
       <Route path="/*" element={<DatasetsMainPage />} />
     </Routes>
+  );
+};
+
+
+// functions
+
+
+
+// Dataset Table
+const DatasetTable: React.FC = () => {
+  const datasets = [
+    {
+      id: 1,
+      fileName: "sales_data_Q3.csv",
+      fileType: "CSV",
+      fileSize: "2.4 MB",
+      uploadedOn: "October 17, 2025, 12:45 PM",
+      status: "Successfully uploaded",
+    },
+    {
+      id: 2,
+      fileName: "sales_data_Q3.csv",
+      fileType: "CSV",
+      fileSize: "2.4 MB",
+      uploadedOn: "October 17, 2025, 12:45 PM",
+      status: "Successfully uploaded",
+    },
+    {
+      id: 3,
+      fileName: "sales_data_Q3.csv",
+      fileType: "CSV",
+      fileSize: "2.4 MB",
+      uploadedOn: "October 17, 2025, 12:45 PM",
+      status: "Successfully uploaded",
+    },
+    {
+      id: 4,
+      fileName: "sales_data_Q3.csv",
+      fileType: "CSV",
+      fileSize: "2.4 MB",
+      uploadedOn: "October 17, 2025, 12:45 PM",
+      status: "Successfully uploaded",
+    },
+  ];
+
+  return (
+        <div className="datasets-wrapper">
+      <div className="datasets-card">
+        <h2 className="datasets-heading">Your Datasets</h2>
+        <table className="datasets-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>File name</th>
+              <th>File type</th>
+              <th>File size</th>
+              <th>Uploaded on</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {datasets.map((data) => (
+              <tr key={data.id}>
+                <td>{data.id}</td>
+                <td>{data.fileName}</td>
+                <td>{data.fileType}</td>
+                <td>{data.fileSize}</td>
+                <td>{data.uploadedOn}</td>
+                <td>
+                  <span className="datasets-status">{data.status}</span>
+                </td>
+                <td className="datasets-actions">
+                  {data.id === 2 && (
+                    <button className="datasets-delete">Delete</button>
+                  )}
+                  <button className="datasets-analyze">Analyze</button>
+                </td>
+              </tr>
+            ))}
+            {[5, 6, 7, 8, 9, 10].map((i) => (
+              <tr key={i}>
+                <td>{i}</td>
+                <td colSpan={6}></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   );
 };
 

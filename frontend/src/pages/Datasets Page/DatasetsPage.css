@@ -39,7 +39,6 @@ body{
 
 .header-text h1 {
   font-family: 'Poppins';
-
   font-weight: 700;
   color: #111827;
   margin: 0 0 0.5rem 0;
@@ -636,6 +635,108 @@ body{
   min-height: 80px;
 }
 
+/* Dataset Table Section */
+.datasets-wrapper {
+  transform: scale(90%);
+  background-image: url('C:\Users\Johnr\Downloads\ClarifAI-main\frontend\public\Background.jpeg');
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  margin-top: 2rem;
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+}
+
+.datasets-card {
+  background: linear-gradient(to bottom right, #f9fafb, #ffffff);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.datasets-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.datasets-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.datasets-table thead {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.datasets-table th,
+.datasets-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.datasets-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.datasets-table tbody tr:hover {
+  background: #f3f4f6;
+  transition: background 0.2s ease;
+}
+
+.datasets-status {
+  background: #22c55e;
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.datasets-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.datasets-analyze {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.datasets-analyze:hover {
+  background: #1d4ed8;
+}
+
+.datasets-delete {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.datasets-delete:hover {
+  text-decoration: underline;
+}
+
+.datasets-table tbody tr td[colspan] {
+  color: transparent;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .datasets-page {
@@ -694,4 +795,3 @@ body{
     padding: 1rem;
   }
 }
-

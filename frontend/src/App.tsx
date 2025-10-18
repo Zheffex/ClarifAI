@@ -17,6 +17,7 @@ import DatasetsPage from './pages/Datasets Page/DatasetsPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
 import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
+// import Settings from './pages/Settings Page/Apperance/Terms and Condition';
 
 
 // Sidebar
@@ -50,17 +51,17 @@ const App: React.FC = () => {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/verify" element={<OtpPage />} />
+                    {/* <Route path="/Settings" element={<Settings Page />} /> */}
 
-
-                    {/* Protected Routes with Sidebar */}
                     <Route path="/dashboard" element={<LayoutWithSidebar><DashboardPage /></LayoutWithSidebar>} />
                     <Route path="/datasets/*" element={<LayoutWithSidebar><DatasetsPage /></LayoutWithSidebar>} />
                     <Route path="/profile" element={<LayoutWithSidebar><ProfilePage /></LayoutWithSidebar>}/>
                     <Route path="/analytics/*" element={<LayoutWithSidebar><AnalyticsPage /></LayoutWithSidebar>} />
                     <Route path="/collaboration/*" element={<LayoutWithSidebar><CollaborationPage /></LayoutWithSidebar>} />
+                    {/* <Route path="/Settings" element={<Settings Page />} /> */}
 
                     {/* Redirect unknown routes */}
-                    {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
+                    {/* <Route path="/Settings" element={<Settings Page />} /> */}
                   </Routes>
                 </div>
               </NotificationProvider>

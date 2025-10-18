@@ -21,6 +21,8 @@ const UnderConstructionPage: React.FC = () => {
         padding: '20px',
       }}
     >
+
+      <title>Collaboration</title>
       <h2 style={{ fontSize: '48px', marginBottom: '20px', marginLeft: '200px' }}>🚧 Still Under Construction 🚧</h2>
       <p style={{ fontSize: '18px', color: '#6b7280' , marginLeft: '200px'}}>
         The Collaboration workspace is not ready yet. Please check back later!

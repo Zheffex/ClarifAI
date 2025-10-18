@@ -8,6 +8,7 @@ import {
   BarChart2,
   Users,
   LogOut,
+  Settings2,
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -45,13 +46,22 @@ const Sidebar: React.FC = () => {
         </NavLink>
       </nav>
 
+      <div className="sb-middle">
+        <hr className="sb-dividers" />
+        <NavLink to="/settings" className="sb-link settings">
+          <div className="sb-icon"><Settings2 size={18} /></div>
+          <span>Settings</span>
+        </NavLink>
+      </div>
+
       <div className="sb-bottom">
         <hr className="sb-divider" />
-        <NavLink to="/landing" className="sb-link logout">
+        <NavLink to="/login" className="sb-link logout">
           <div className="sb-icon"><LogOut size={18} /></div>
           <span>Log out</span>
         </NavLink>
       </div>
+
     </aside>
   );
 };
