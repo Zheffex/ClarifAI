@@ -115,64 +115,76 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
   }
 });
 
-// Verify OTP - Step 2: Complete registration
+// Verify OTP
 export const verifyOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, otp } = req.body;
-
-  // Find user
   const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) {
-    throw new AppError('User not found', 404);
-  }
+  if (!user) throw new AppError('User not found', 404);
+  if (user.isEmailVerified) throw new AppError('Email already verified', 400);
 
-  // Check if email already verified
-  if (user.isEmailVerified) {
-    throw new AppError('Email already verified', 400);
-  }
-
-  // Verify OTP
   const verificationResult = await otpService.verifyOTP(email, otp);
-  if (!verificationResult.success) {
-    throw new AppError(verificationResult.message, 400);
-  }
+  if (!verificationResult.success) throw new AppError(verificationResult.message, 400);
 
-  // Mark email as verified and activate user
   await user.markEmailAsVerified();
-
-  // Generate token for the verified user
   const token = generateToken(user);
-
-  // Send welcome email
   await EmailService.sendWelcomeEmail(user.email, user.firstName);
-
-  // Remove password from response
-  const userResponse = {
-    _id: user._id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    fullName: user.fullName,
-    role: user.role,
-    organizationId: user.organizationId,
-    preferences: user.preferences,
-    isActive: user.isActive,
-    isEmailVerified: user.isEmailVerified,
-    emailVerifiedAt: user.emailVerifiedAt,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
-  };
-
-  logger.info(`Email verified and user activated: ${user.email}`);
 
   res.status(200).json({
     success: true,
-    data: {
-      user: userResponse,
+    data: { 
+      user: {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.fullName,
+        role: user.role,
+        organizationId: user.organizationId,
+        preferences: user.preferences,
+        isActive: user.isActive,
+        isEmailVerified: user.isEmailVerified,
+        emailVerifiedAt: user.emailVerifiedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      },
       token
     },
     message: 'Email verified successfully! Welcome to ClarifAI.'
   });
 });
+
+// Forgot password
+export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    res.status(200).json({
+      success: true,
+      message: 'If an account with this email exists, a reset link has been sent.'
+    });
+    return;
+  }
+
+  try {
+    const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), user.firstName, 'password_reset');
+
+    logger.info(`Password reset link sent to: ${email}`, { userId: user._id });
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account with this email exists, a reset link has been sent.',
+      data: {
+        canResend: otpResult.canResend,
+        nextResendTime: otpResult.nextResendTime
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to send password reset email', { email, error: (error as Error).message });
+    throw new AppError('Failed to send password reset email', 500);
+  }
+});
+
 
 // Resend OTP
 export const resendOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {

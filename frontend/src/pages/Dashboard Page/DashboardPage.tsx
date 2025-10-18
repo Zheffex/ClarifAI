@@ -63,6 +63,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Header */}
         <div className="dp-header">
+          <title>Dashboard</title>
           <h1 className="dp-title">Dashboard</h1>
 
           <div className="dp-searchbar">

@@ -65,14 +65,14 @@ export const authService = {
     }
   },
 
-  async forgotPassword(email: string): Promise<void> {
+    async forgotPassword(email: string): Promise<void> {
     try {
-      // Sends reset link
       await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
     } catch (error: any) {
       throw new Error(error.response?.data?.error?.message || 'Failed to send password reset email');
     }
-  },
+  }
+  ,
 
   async logout(): Promise<void> {
     try {

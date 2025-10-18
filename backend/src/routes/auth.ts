@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  forgotPassword,
   register,
   verifyOTP,
   resendOTP,
@@ -16,6 +17,7 @@ import {
   validateUpdateProfile,
   validateChangePassword
 } from '../controllers/authController';
+
 import { handleValidationErrors } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
 import {requirePermission} from "../middleware/rbac";
@@ -23,6 +25,7 @@ import {requirePermission} from "../middleware/rbac";
 const router = Router();
 
 // Public routes
+router.post('/forgot-password', forgotPassword);
 router.post('/register', validateRegister, handleValidationErrors, register);
 router.post('/verify-otp', validateVerifyOTP, handleValidationErrors, verifyOTP);
 router.post('/resend-otp', validateResendOTP, handleValidationErrors, resendOTP);
