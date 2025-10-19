@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
+import { OTPVerification } from '../models/OTPVerification';
+import { notificationService } from '../services/notificationService';
 import { body, validationResult } from 'express-validator';
 import { User, IUser } from '../models/User';
 import { generateToken } from '../middleware/auth';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
 import { otpService } from '../services/otpService';
-import { EmailService } from '../services/emailService';
-import { 
+// ADDED "SendResetEmail"(NEW)
+import { EmailService, sendResetEmail } from '../services/emailService';
+import {
   AuthenticationError,
   InvalidCredentialsError,
   TokenExpiredError,
@@ -16,17 +20,17 @@ import {
   BusinessRuleViolationError,
   OperationNotAllowedError
 } from '../types/errors';
-import { 
-  sanitizeInput, 
+import {
+  sanitizeInput,
   handleValidationErrors,
-  commonValidations 
+  commonValidations
 } from '../middleware/validation';
-import { 
+import {
   retryEmailOperation,
-  withCircuitBreakerEmail 
+  withCircuitBreakerEmail
 } from '../middleware/retry';
-import { 
-  withGracefulDegradation 
+import {
+  withGracefulDegradation
 } from '../middleware/gracefulDegradation';
 
 // Register user
@@ -131,7 +135,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response): Promi
 
   res.status(200).json({
     success: true,
-    data: { 
+    data: {
       user: {
         _id: user._id,
         email: user.email,
@@ -153,36 +157,31 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response): Promi
   });
 });
 
-// Forgot password
+
+// Forgot password - send OTP (NEW)
 export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email } = req.body;
+  const requestId = req.headers['x-request-id'] as string;
+  const context = { requestId, operation: 'user_registration' };
 
   const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) {
-    res.status(200).json({
-      success: true,
-      message: 'If an account with this email exists, a reset link has been sent.'
-    });
-    return;
-  }
+  if (!user) throw new AppError('User not found', 404);
 
-  try {
-    const otpResult = await otpService.generateAndSendOTP(email.toLowerCase(), user.firstName, 'password_reset');
+  const otpResult = await withGracefulDegradation(
+    'email',
+    () => otpService.generateAndSendOTP(email.toLowerCase(), user.firstName, 'password_reset'),
+    context
+  );
 
-    logger.info(`Password reset link sent to: ${email}`, { userId: user._id });
-
-    res.status(200).json({
-      success: true,
-      message: 'If an account with this email exists, a reset link has been sent.',
-      data: {
-        canResend: otpResult.canResend,
-        nextResendTime: otpResult.nextResendTime
-      }
-    });
-  } catch (error) {
-    logger.error('Failed to send password reset email', { email, error: (error as Error).message });
-    throw new AppError('Failed to send password reset email', 500);
-  }
+  res.status(200).json({
+    success: true,
+    data: {
+      emailSent: otpResult.success,
+      canResend: otpResult.canResend,
+      nextResendTime: otpResult.nextResendTime
+    },
+  });
+  return;
 });
 
 
@@ -306,7 +305,7 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
 export const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   // In a stateless JWT implementation, logout is primarily handled client-side
   // Here we can log the logout event and potentially blacklist the token if needed
-  
+
   const user = req.user as IUser;
   if (user) {
     logger.info(`User logged out: ${user.email}`);
@@ -411,7 +410,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response): 
 // Search users by query (for collaboration)
 export const searchUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { q, limit = '10', page = '1' } = req.query;
-  
+
   if (!q || typeof q !== 'string') {
     throw new AppError('Query parameter "q" is required', 400);
   }
@@ -456,7 +455,7 @@ export const searchUsers = asyncHandler(async (req: Request, res: Response): Pro
 
   res.json({
     success: true,
-    data: { 
+    data: {
       users,
       pagination: {
         page: pageNum,

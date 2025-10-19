@@ -65,14 +65,22 @@ export const authService = {
     }
   },
 
-    async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(email: string): Promise<void> {
     try {
       await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
     } catch (error: any) {
       throw new Error(error.response?.data?.error?.message || 'Failed to send password reset email');
     }
-  }
-  ,
+  },
+
+  // OTP forgot Password.
+  async verifyForgotPasswordOtp(email: string, otp: string): Promise<void> {
+    try {
+      await api.post<ApiResponse<void>>('/auth/forgot-password', { email, otp });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error?.message || 'Forgot password OTP verification failed');
+    }
+  },
 
   async logout(): Promise<void> {
     try {
@@ -82,7 +90,7 @@ export const authService = {
     }
   },
 
-     async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+  async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
     try {
       const response = await api.post('/auth/verify-otp', { email, otp });
       return response.data.data;

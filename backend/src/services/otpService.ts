@@ -87,9 +87,13 @@ class OTPService {
       });
 
       await otpRecord.save();
-
+      let emailSent;
       // Send OTP via email
-      const emailSent = await EmailService.sendOTPEmail(email, otp, firstName);
+      if(type === 'email_verification') {
+        emailSent = await EmailService.sendOTPEmail(email, otp, firstName);
+      } else if(type === 'password_reset') {
+        emailSent = await EmailService.sendResetOTPEmail(email, otp, firstName);
+      }
 
       if (!emailSent) {
         // If email sending fails, mark OTP as used to prevent misuse
@@ -255,6 +259,9 @@ class OTPService {
       logger.error('Error cleaning up expired OTPs:', error);
       return 0;
     }
+
+
+    
   }
 }
 

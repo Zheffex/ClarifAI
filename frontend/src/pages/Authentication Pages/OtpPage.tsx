@@ -17,28 +17,52 @@ const OtpPage: React.FC = () => {
   const [buttonMessage, setButtonMessage] = useState('Verify Code');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!email) {
+  if (!email) {
+    addNotification({
+      type: 'error',
+      title: 'Missing Email',
+      message: 'No email address found. Please go back and request a new code.'
+    });
+    return;
+  }
+
+  if (!code || code.length !== 6) return;
+
+  setIsSubmitting(true);
+  setButtonMessage('Verifying...');
+
+  try {
+    const flow = localStorage.getItem('otpFlow') || 'register';
+
+    if (flow === 'forgotPassword') {
+      // Use notification instead of alert
       addNotification({
-        type: 'error',
-        title: 'Missing Email',
-        message: 'No email address found. Please go back and request a new code.'
+        type: 'success',
+        title: 'OTP Sent',
+        message: 'Successfully sent the OTP for resetting your password'
       });
-      return;
-    }
 
-      // alert("Verifying")
+      await authService.verifyForgotPasswordOtp(email, code);
 
+      addNotification({
+        type: 'success',
+        title: 'OTP Verified',
+        message: 'You can now reset your password.'
+      });
 
-    if (!code || code.length !== 6) return;
+      setButtonMessage('✅ Verified!');
+      setTimeout(() => navigate('/login'), 1500);
 
-    setIsSubmitting(true);
-    setButtonMessage('Verifying...');
+    } else {
+      addNotification({
+        type: 'success',
+        title: 'OTP Sent',
+        message: 'Successfully sent the OTP for account verification'
+      });
 
-    try {
       const response = await authService.verifyOtp(email, code);
-      // Save token to localStorage
       localStorage.setItem('token', response.token);
 
       addNotification({
@@ -48,18 +72,21 @@ const OtpPage: React.FC = () => {
       });
 
       setButtonMessage('✅ Verified!');
-      setTimeout(() => navigate('/dashboard'), 1200);
-    } catch (error: any) {
-      addNotification({
-        type: 'error',
-        title: 'Verification Failed',
-        message: error.message || 'Invalid or expired OTP.'
-      });
-      setButtonMessage('Verify Code');
-    } finally {
-      setIsSubmitting(false);
+      setTimeout(() => navigate('/dashboard'), 1500);
     }
-  };
+
+  } catch (error: any) {
+    addNotification({
+      type: 'error',
+      title: 'Verification Failed',
+      message: error.message || 'Invalid or expired OTP.'
+    });
+    setButtonMessage('Verify Code');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleResend = () => {
     addNotification({

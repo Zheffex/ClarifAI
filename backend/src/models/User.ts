@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 export interface IPushSubscription {
@@ -27,6 +28,8 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
 
+  
+
   // Virtual properties
   fullName: string;
 
@@ -54,6 +57,9 @@ const userSchema = new Schema<IUser>({
       'Please enter a valid email address'
     ]
   },
+
+  
+
   passwordHash: {
     type: String,
     required: [true, 'Password is required'],
@@ -191,6 +197,21 @@ userSchema.methods.markEmailAsVerified = async function(): Promise<void> {
   this.emailVerifiedAt = new Date();
   this.isActive = true; // Activate user when email is verified
   await this.save();
+};
+
+// Instance method to create password reset token(Added NEW)
+userSchema.methods.createPasswordResetToken = function(): string {
+  // 1. Generate a random token
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // 2. Hash the token and store it in the DB
+  this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  // 3. Set expiration (e.g., 10 minutes)
+  this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+  // 4. Return plain token to send via email
+  return resetToken;
 };
 
 // Static methods

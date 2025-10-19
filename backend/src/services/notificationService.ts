@@ -100,6 +100,29 @@ export class NotificationService {
     }
   }
 
+  // Forgot Password (ADDED NEW)
+  async sendForgotPasswordNotification(userId: string, email: string): Promise<INotification> {
+    try {
+      const notificationData: NotificationData = {
+        userId,
+        type: 'system_alert', // or create a custom type like 'forgot_password'
+        title: 'Password Reset Requested',
+        message: `A password reset has been requested for your account (${email}). If this was you, follow the instructions sent to your email. If not, please secure your account immediately.`,
+        metadata: {},
+        priority: 'high',
+        channels: ['email', 'inApp'] // choose channels you want
+      };
+
+      const notification = await this.createNotification(notificationData);
+
+      logger.info(`Forgot password notification sent for user ${userId}`);
+      return notification;
+    } catch (error) {
+      logger.error('Failed to send forgot password notification:', error);
+      throw error;
+    }
+  }
+
   // Create a new notification
   async createNotification(data: NotificationData): Promise<INotification> {
     try {
@@ -624,6 +647,8 @@ export class NotificationService {
       push: this.isPushConfigured,
       inApp: true // Always available
     };
+
+    
   }
 }
 

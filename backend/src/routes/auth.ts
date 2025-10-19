@@ -25,11 +25,11 @@ import {requirePermission} from "../middleware/rbac";
 const router = Router();
 
 // Public routes
-router.post('/forgot-password', forgotPassword);
 router.post('/register', validateRegister, handleValidationErrors, register);
 router.post('/verify-otp', validateVerifyOTP, handleValidationErrors, verifyOTP);
 router.post('/resend-otp', validateResendOTP, handleValidationErrors, resendOTP);
 router.post('/login', validateLogin, handleValidationErrors, login);
+router.post('/forgot-password', forgotPassword);
 // Protected routes  
 router.post('/logout', 
   authenticate, 
