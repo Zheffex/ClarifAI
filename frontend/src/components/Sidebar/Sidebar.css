@@ -74,16 +74,65 @@ body{
 }
 
 /* bottom logout */
-.sb-middle { margin-top: 0; }
-.sb-dividers { border: none; height: 2px; background: rgba(255, 255, 255, 0.315); margin: 12px 0; }
+/* --- Sidebar Bottom (Logout Section) --- */
+.sb-bottom {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
 
-.settings .sb-icon { background: rgba(255,255,255,0.06); }
+.sb-divider {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 12px 0;
+}
 
-/* bottom logout */
-.sb-bottom { margin-top: auto; }
-.sb-divider { border: none; height: 2px; background: rgba(255, 255, 255, 0.315); margin: 12px 0; }
+/* --- Logout Button --- */
+.sb-link.logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
 
-.logout .sb-icon { background: rgba(255,255,255,0.06); }
+/* Hover / Active Effects */
+.sb-link.logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff7675; /* light red accent */
+}
+
+.sb-link.logout:active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(0.98);
+}
+
+/* Icon inside logout */
+.logout .sb-icon {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: background 0.2s ease;
+}
+
+.sb-link.logout:hover .sb-icon {
+  background: #ff7675;
+}
+
+
+
 
 /* responsive: collapse to top bar on small screens */
 @media (max-width: 720px) {
@@ -102,3 +151,5 @@ body{
   .sb-top .sb-brand { display: none; }
   .sb-bottom { display: none; }
 }
+
+

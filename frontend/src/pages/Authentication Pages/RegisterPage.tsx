@@ -129,7 +129,6 @@ const RegisterPage: React.FC = () => {
     if (/(?=.*[a-z])/.test(password)) score++;
     if (/(?=.*[A-Z])/.test(password)) score++;
     if (/(?=.*\d)/.test(password)) score++;
-    if (/(?=.*[!@#$%^&*])/.test(password)) score++;
     
     if (score <= 2) return { score, label: 'Weak', color: '#ef4444' };
     if (score <= 4) return { score, label: 'Medium', color: '#f59e0b' };

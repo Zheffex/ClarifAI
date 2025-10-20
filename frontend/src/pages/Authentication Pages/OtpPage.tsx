@@ -37,13 +37,7 @@ const OtpPage: React.FC = () => {
     const flow = localStorage.getItem('otpFlow') || 'register';
 
     if (flow === 'forgotPassword') {
-      // Use notification instead of alert
-      addNotification({
-        type: 'success',
-        title: 'OTP Sent',
-        message: 'Successfully sent the OTP for resetting your password'
-      });
-
+      // ✅ Verify OTP for forgot password
       await authService.verifyForgotPasswordOtp(email, code);
 
       addNotification({
@@ -53,26 +47,25 @@ const OtpPage: React.FC = () => {
       });
 
       setButtonMessage('✅ Verified!');
-      setTimeout(() => navigate('/login'), 1500);
 
+      // ✅ Wait for user to see success, then navigate to New Password page
+      setTimeout(() => {
+        console.log("✅ Navigating to /new-password");
+        navigate('/new-password');
+      }, 1200);
     } else {
-      addNotification({
-        type: 'success',
-        title: 'OTP Sent',
-        message: 'Successfully sent the OTP for account verification'
-      });
-
+      // 🔹 Default registration OTP verification
       const response = await authService.verifyOtp(email, code);
       localStorage.setItem('token', response.token);
 
       addNotification({
         type: 'success',
         title: 'Verification Successful',
-        message: 'Your account has been verified. Welcome to your dashboard!'
+        message: 'Your account has been verified. Welcome!'
       });
 
       setButtonMessage('✅ Verified!');
-      setTimeout(() => navigate('/dashboard'), 1500);
+      setTimeout(() => navigate('/dashboard'), 1200);
     }
 
   } catch (error: any) {
@@ -153,7 +146,7 @@ const OtpPage: React.FC = () => {
               {buttonMessage}
             </button>
 
-            <Link to="/login" className="otp-secondary-btn">
+            <Link to="/forgot-password" className="otp-secondary-btn">
               Go back
             </Link>
           </div>

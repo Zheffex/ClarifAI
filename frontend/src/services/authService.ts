@@ -66,36 +66,45 @@ export const authService = {
   },
 
   async forgotPassword(email: string): Promise<void> {
-    try {
-      await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error?.message || 'Failed to send password reset email');
-    }
-  },
+  try {
+    await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error?.message ||
+      'Failed to send password reset email'
+    );
+  }
+},
 
-  // OTP forgot Password.
-  async verifyForgotPasswordOtp(email: string, otp: string): Promise<void> {
-    try {
-      await api.post<ApiResponse<void>>('/auth/forgot-password', { email, otp });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error?.message || 'Forgot password OTP verification failed');
-    }
-  },
+// ✅ Verify OTP for Forgot Password
+async verifyForgotPasswordOtp(email: string, otp: string): Promise<void> {
+  try {
+    await api.post<ApiResponse<void>>('/auth/forgot-password/verify', { email, otp });
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error?.message ||
+      'Forgot password OTP verification failed'
+    );
+  }
+},
+
+// ✅ Verify OTP for registration/account verification
+async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+  try {
+    const response = await api.post('/auth/verify-otp', { email, otp });
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || 'OTP verification failed'
+    );
+  }
+},
 
   async logout(): Promise<void> {
     try {
       await api.post('/auth/logout');
     } catch (error) {
       // Ignore logout errors
-    }
-  },
-
-  async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
-    try {
-      const response = await api.post('/auth/verify-otp', { email, otp });
-      return response.data.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'OTP verification failed');
     }
   },
 

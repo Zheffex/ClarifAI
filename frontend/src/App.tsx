@@ -11,6 +11,7 @@ import LandingPage from "./pages/Landing Page/LandingPage";
 import LoginPage from './pages/Authentication Pages/LoginPage';
 import RegisterPage from './pages/Authentication Pages/RegisterPage';
 import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage';
+import NewPasswordPage from './pages/Authentication Pages/NewPasswordPage';
 import OtpPage from './pages/Authentication Pages/OtpPage';
 import DashboardPage from './pages/Dashboard Page/DashboardPage';
 import DatasetsPage from './pages/Datasets Page/DatasetsPage';
@@ -23,6 +24,7 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 // Sidebar
 import Sidebar from './components/Sidebar/Sidebar';
 import './App.css';
+
 
 // Layout wrapper for pages with sidebar
 const LayoutWithSidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -50,6 +52,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/new-password" element={<NewPasswordPage />} />
                     <Route path="/verify" element={<OtpPage />} />
                     {/* <Route path="/Settings" element={<Settings Page />} /> */}
 
