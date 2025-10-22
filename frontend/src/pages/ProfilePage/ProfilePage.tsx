@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./ProfilePage.css";
+import { authService } from "../../services/authService";
 
 const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [user, setUser] = useState({
-    firstname: "John Doe",
-    lastname: "Mcknight",
+    firstname: "John",
+    lastname: "Doe",
     email: "JohnDoe@gmail.com",
     role: "Admin",
   });
@@ -27,10 +28,33 @@ const ProfilePage: React.FC = () => {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
 
-  const saveProfile = () => {
-    alert("Profile saved successfully!");
+  const saveProfile = async () => {
+  try {
+    const updatedData = {
+      firstName: user.firstname,
+      lastName: user.lastname,
+    };
+
+    const updatedUser = await authService.updateProfile(updatedData);
+
+    setUser({
+      firstname: updatedUser.firstName,
+      lastname: updatedUser.lastName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    });
+
+    localStorage.setItem("profileData", JSON.stringify(updatedUser));
+
+    alert("Profile updated successfully!");
     setIsEditing(false);
-  };
+  } catch (error: any) {
+    console.error("Failed to update profile:", error);
+    alert(error.message || "Failed to save profile.");
+  }
+};
+
+
 
   const changePassword = () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -41,6 +65,24 @@ const ProfilePage: React.FC = () => {
     setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setIsChangingPassword(false);
   };
+
+  useEffect(() => {
+  const fetchUser = async () => {
+    const savedUser = localStorage.getItem("profileData");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setUser({
+        firstname: parsed.user.firstName,
+        lastname: parsed.user.lastName,
+        email: parsed.user.email,
+        role: parsed.user.role,
+      });
+    }
+  };
+
+  fetchUser();
+}, []);
+
 
   return (
     <div className="profile-page">
@@ -114,7 +156,7 @@ const ProfilePage: React.FC = () => {
                       <input
                         name="email"
                         value={user.email}
-                        onChange={handleUserChange}
+                        disabled
                         className="input-field"
                       />
                     </div>
@@ -123,7 +165,7 @@ const ProfilePage: React.FC = () => {
                       <input
                         name="role"
                         value={user.role}
-                        onChange={handleUserChange}
+                        disabled
                         className="input-field"
                       />
                     </div>

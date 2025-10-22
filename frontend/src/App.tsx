@@ -14,7 +14,7 @@ import ForgotPasswordPage from './pages/Authentication Pages/ForgotPasswordPage'
 import NewPasswordPage from './pages/Authentication Pages/NewPasswordPage';
 import OtpPage from './pages/Authentication Pages/OtpPage';
 import DashboardPage from './pages/Dashboard Page/DashboardPage';
-import DatasetsPage from './pages/Datasets Page/DatasetsPage';
+import DatasetsPage  from './pages/Datasets Page/DatasetsPage';
 import AnalyticsPage from './pages/Analytics Page/AnalyticsPage';
 import CollaborationPage from './pages/Collaboration Page/CollaborationPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';

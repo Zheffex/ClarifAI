@@ -633,7 +633,7 @@ export class NotificationService {
         Notification.countDocuments({ userId, 'channels.inApp.read': false })
       ]);
 
-      return { notifications, total, unreadCount };
+     return { notifications: notifications as unknown as INotification[], total, unreadCount };
     } catch (error) {
       logger.error('Failed to get user notifications:', error);
       throw error;

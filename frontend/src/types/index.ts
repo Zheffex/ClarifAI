@@ -18,6 +18,8 @@ export interface User {
 
 // Dataset types
 export interface Dataset {
+  columns: ReactNode;
+  rows: ReactNode;
   status: any;
   size: ReactNode;
   type: ReactNode;
@@ -173,6 +175,17 @@ export interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 }
+
+export interface DatasetResponse {
+  datasets: Dataset[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
 
 // Context types
 export interface DatasetContextType {

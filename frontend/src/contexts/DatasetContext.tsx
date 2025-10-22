@@ -1,152 +1,64 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Dataset, DatasetContextType } from '../types';
-import axios from 'axios';
+// src/contexts/DatasetContext.tsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Dataset } from '../types';
+import { datasetService } from '../services/datasetService';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+interface DatasetContextProps {
+  datasets: Dataset[];
+  fetchDatasets: () => Promise<void>;
+  uploadDataset: (file: File, name: string, description?: string, tags?: string[]) => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+}
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+const DatasetContext = createContext<DatasetContextProps>({} as DatasetContextProps);
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle token expiration
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-const DatasetContext = createContext<DatasetContextType | undefined>(undefined);
-
-export function DatasetProvider({ children }: { children: ReactNode }) {
+export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [currentDataset, setCurrentDataset] = useState<Dataset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  const uploadDataset = async (file: File, metadata: any): Promise<Dataset> => {
+  const fetchDatasets = async () => {
     setIsLoading(true);
     setError(null);
-    
+    try {
+      const data = await datasetService.getAll();
+      setDatasets(data.datasets);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch datasets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadDataset = async (file: File, name: string, description?: string, tags?: string[]) => {
+    setIsLoading(true);
+    setError(null);
     try {
       const formData = new FormData();
-      formData.append('dataset', file);
-      if (metadata.name) formData.append('name', metadata.name);
-      if (metadata.description) formData.append('description', metadata.description);
-      
-      const response = await api.post('/datasets/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      const newDataset = response.data.data;
-      setDatasets(prev => [newDataset, ...prev]);
-      return newDataset;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 'Failed to upload dataset';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      formData.append('file', file);
+      formData.append('name', name);
+      if (description) formData.append('description', description);
+      if (tags) formData.append('tags', JSON.stringify(tags));
+
+      const dataset = await datasetService.upload(formData);
+      setDatasets(prev => [dataset, ...prev]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload dataset');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchDatasets = async (): Promise<void> => {
-    // Prevent rapid successive calls
-    const now = Date.now();
-    if (now - lastFetchTime < 5000) { // 5 second cooldown
-      return;
-    }
-    
-    if (isLoading) return; // Prevent concurrent requests
-    
-    setIsLoading(true);
-    setError(null);
-    setLastFetchTime(now);
-    
-    try {
-      const response = await api.get('/datasets');
-      const fetchedDatasets = response.data.data || [];
-      // Ensure we always set an array
-      setDatasets(Array.isArray(fetchedDatasets) ? fetchedDatasets : []);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 'Failed to fetch datasets';
-      setError(errorMessage);
-      // Set empty array on error
-      setDatasets([]);
-      console.error('Dataset fetch error:', errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchDatasets();
+  }, []);
 
-  const selectDataset = async (datasetId: string): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await api.get(`/datasets/${datasetId}`);
-      setCurrentDataset(response.data.data);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 'Failed to select dataset';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  return (
+    <DatasetContext.Provider value={{ datasets, fetchDatasets, uploadDataset, isLoading, error }}>
+      {children}
+    </DatasetContext.Provider>
+  );
+};
 
-  const deleteDataset = async (datasetId: string): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      await api.delete(`/datasets/${datasetId}`);
-      setDatasets(prev => prev.filter(dataset => dataset._id !== datasetId));
-      if (currentDataset?._id === datasetId) {
-        setCurrentDataset(null);
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 'Failed to delete dataset';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const value: DatasetContextType = {
-    datasets,
-    currentDataset,
-    isLoading,
-    error,
-    uploadDataset,
-    fetchDatasets,
-    selectDataset,
-    deleteDataset,
-  };
-
-  return <DatasetContext.Provider value={value}>{children}</DatasetContext.Provider>;
-}
-
-export function useDataset() {
-  const context = useContext(DatasetContext);
-  if (!context) {
-    throw new Error('useDataset must be used within a DatasetProvider');
-  }
-  return context;
-}
+export const useDataset = () => useContext(DatasetContext);

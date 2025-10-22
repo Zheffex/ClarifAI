@@ -7,6 +7,8 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+
+
 // Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -49,8 +51,8 @@ export const authService = {
 
   async getCurrentUser(): Promise<User> {
     try {
-      const response = await api.get<ApiResponse<User>>('/auth/me');
-      return response.data.data!;
+      const response = await api.get<ApiResponse<{ user: User }>>('/auth/me');
+      return response.data.data?.user!;
     } catch (error: any) {
       throw new Error(error.response?.data?.error?.message || 'Failed to get user');
     }
@@ -66,39 +68,39 @@ export const authService = {
   },
 
   async forgotPassword(email: string): Promise<void> {
-  try {
-    await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.error?.message ||
-      'Failed to send password reset email'
-    );
-  }
-},
+    try {
+      await api.post<ApiResponse<void>>('/auth/forgot-password', { email });
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+        'Failed to send password reset email'
+      );
+    }
+  },
 
-// ✅ Verify OTP for Forgot Password
-async verifyForgotPasswordOtp(email: string, otp: string): Promise<void> {
-  try {
-    await api.post<ApiResponse<void>>('/auth/forgot-password/verify', { email, otp });
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.error?.message ||
-      'Forgot password OTP verification failed'
-    );
-  }
-},
+  // ✅ Verify OTP for Forgot Password
+  async verifyForgotPasswordOtp(email: string, otp: string): Promise<void> {
+    try {
+      await api.post<ApiResponse<void>>('/auth/forgot-password/verify', { email, otp });
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+        'Forgot password OTP verification failed'
+      );
+    }
+  },
 
-// ✅ Verify OTP for registration/account verification
-async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
-  try {
-    const response = await api.post('/auth/verify-otp', { email, otp });
-    return response.data.data;
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.message || 'OTP verification failed'
-    );
-  }
-},
+  // ✅ Verify OTP for registration/account verification
+  async verifyOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+    try {
+      const response = await api.post('/auth/verify-otp', { email, otp });
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 'OTP verification failed'
+      );
+    }
+  },
 
   async logout(): Promise<void> {
     try {

@@ -67,7 +67,7 @@ const DashboardPage: React.FC = () => {
           <h1 className="dp-title">Dashboard</h1>
 
           <div className="dp-searchbar">
-            <Search size={20} />
+            <Search size={30} />
             <input type="text" placeholder="Search anything" />
           </div>
 
@@ -79,7 +79,7 @@ const DashboardPage: React.FC = () => {
               />
               <div>
                 <p className="dp-username">{user?.firstName || "Justin Munar"}</p>
-                <span>Admin</span>
+                <span className="role">Analyst</span>
               </div>
             </div>
             <Bell size={20} className="dp-bell" />
