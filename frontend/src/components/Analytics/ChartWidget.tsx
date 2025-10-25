@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Widget, { WidgetConfig } from './Widget';
 import Chart from './Chart';
-import { ChartConfig, ChartService } from '../services/chartService';
+import { ChartConfig, ChartService } from '../../services/chartService';
 import './ChartWidget.css';
 
 interface ChartWidgetData {

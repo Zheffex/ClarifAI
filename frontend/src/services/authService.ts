@@ -110,5 +110,12 @@ export const authService = {
     }
   },
 
-
+  // ✅ Change password
+  async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+    try {
+      await api.post('/auth/change-password', data);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error?.message || 'Failed to change password');
+    }
+  },
 };

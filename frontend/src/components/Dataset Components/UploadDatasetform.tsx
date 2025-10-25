@@ -27,7 +27,7 @@ export const UploadDatasetFormModal: React.FC = () => {
         className="open-modal-btn"
         onClick={() => setIsOpen(true)}
       >
-        + Upload Dataset
+        Upload Dataset
       </button>
 
       {/* Modal Overlay */}
@@ -42,6 +42,7 @@ export const UploadDatasetFormModal: React.FC = () => {
                 <input
                   value={name}
                   onChange={e => setName(e.target.value)}
+                  placeholder="Enter a name"
                   required
                 />
               </div>

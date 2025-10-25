@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dataset } from '../types/api';
+import { Dataset } from '../../types/api';
 import './DataQualityReport.css';
 
 interface DataQualityReportProps {

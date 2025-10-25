@@ -18,25 +18,24 @@ export interface User {
 
 // Dataset types
 export interface Dataset {
-  columns: ReactNode;
-  rows: ReactNode;
-  status: any;
-  size: ReactNode;
-  type: ReactNode;
   _id: string;
   name: string;
   description?: string;
   fileId: string;
   uploadedBy: string;
   organizationId: string;
-  schema: Record<string, any>;
+  dataSchema: Record<string, any>;
   metadata: {
     size: number;
-    type: string;
+    type: 'csv' | 'json' | 'xlsx' | 'tsv' | 'parquet';
     rows?: number;
     columns?: number;
+    encoding?: string;
+    delimiter?: string;
+    headers?: string[];
   };
   processingStatus: 'pending' | 'processing' | 'ready' | 'error';
+  processingError?: string;
   tags: string[];
   isPublic: boolean;
   accessPermissions: Array<{

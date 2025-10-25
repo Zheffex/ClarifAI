@@ -20,7 +20,7 @@ import {
   Doughnut,
   Scatter
 } from 'react-chartjs-2';
-import { ChartConfig } from '../services/chartService';
+import { ChartConfig } from '../../services/chartService';
 import './Chart.css';
 
 // Register ChartJS components

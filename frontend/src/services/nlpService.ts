@@ -1,6 +1,7 @@
 import { Dataset } from '../types/api';
 import { ChartConfig } from './chartService';
 
+
 export interface NLPQuery {
   text: string;
   intent?: 'visualization' | 'analysis' | 'summary' | 'comparison' | 'trend';

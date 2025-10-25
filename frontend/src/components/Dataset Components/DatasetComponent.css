@@ -103,19 +103,16 @@
 /* Dataset Card Section */
 
 .dataset-card {
-  align-items: center;
-  background-image: url('C:\Users\Johnr\Downloads\ClarifAI-main\frontend\public\Background.jpeg');
+  background-color: white;
   background-size: cover;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1rem 1.25rem;
-  width: 320px;
-  align-items: flex-start;
-  width: calc(40% - 20rem);  
-  min-width: 300px;             
+  width: calc(60% - 10rem);  
+  min-width: 200px;             
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   transition: all 0.2s ease;
-  margin:24px;
+  margin:1px;
 }
 
 .dataset-card:hover {
@@ -152,21 +149,44 @@
   margin: 0.2rem 0 0;
 }
 
+/* 🌐 Base Status Badge */
 .dataset-card__status {
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  transition: all 0.3s ease;
+  margin-left: auto;
 }
 
-.status--ready {
-  background-color: #d1fae5;
-  color: #065f46;
+/* ✅ READY STATUS */
+.Dataset-status--ready {
+  background-color: #e6ffed;
+  color: #0f9d58;
+  border: 1px solid #0f9d58;
 }
 
+/* ⏳ PENDING STATUS */
 .status--pending {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: #fff4e5;
+  color: #e67e22;
+  border: 1px solid #e67e22;
+}
+
+/* ❌ FAILED STATUS (optional) */
+.status--failed {
+  background-color: #ffe6e6;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
+
+/* ⚙️ PROCESSING STATUS (optional) */
+.status--processing {
+  background-color: #e6f0ff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
 }
 
 .dataset-card__details {

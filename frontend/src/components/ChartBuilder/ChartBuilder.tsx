@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Dataset } from '../types/api';
-import { ChartConfig, ChartService } from '../services/chartService';
-import Chart from './Chart';
+import { Dataset } from '../../types/api';
+import { ChartConfig, ChartService } from '../../services/chartService';
+import Chart from '../Chart';
 import './ChartBuilder.css';
 
 interface ChartBuilderProps {

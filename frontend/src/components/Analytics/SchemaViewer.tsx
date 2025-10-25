@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dataset } from '../types/api';
+import { Dataset } from '../../types/api';
 import './SchemaViewer.css';
 
 interface SchemaViewerProps {
@@ -65,12 +65,28 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load schema data');
+        // Check if response is HTML (error page)
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
+        }
+        throw new Error(`Failed to load schema data: ${response.status} ${response.statusText}`);
+      }
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        if (text.includes('<!DOCTYPE')) {
+          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
+        }
+        throw new Error('Server returned non-JSON response');
       }
 
       const result = await response.json();
       setSchemaData(result.data);
     } catch (err) {
+      console.error('SchemaViewer error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load schema');
     } finally {
       setLoading(false);

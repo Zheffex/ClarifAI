@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NLPService, NLPResponse } from '../services/nlpService';
-import { Dataset } from '../types';
+import { NLPService, NLPResponse } from '../../services/nlpService';
+import { aiService } from '../../services/aiService';
+import { Dataset } from '../../types';
 import './AIChat.css';
+import { ChevronDown, ChevronUp, LucideClockFading, Send } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -219,7 +221,7 @@ const AIChat: React.FC<AIChatProps> = ({
           )}
         </div>
         <div className="chat-toggle">
-          {isExpanded ? '▼' : '▲'}
+          {isExpanded ? <ChevronDown></ChevronDown> : <ChevronUp></ChevronUp>}
         </div>
       </div>
       
@@ -282,7 +284,7 @@ const AIChat: React.FC<AIChatProps> = ({
                 className="send-button"
                 disabled={!inputValue.trim() || isLoading}
               >
-                {isLoading ? '⏳' : '📤'}
+                {isLoading ? <LucideClockFading></LucideClockFading> : <Send></Send>}
               </button>
             </div>
           </form>
