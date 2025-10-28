@@ -1,7 +1,6 @@
 /* Modern Profile Page Styles */
 .profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem;
   position: relative;
   overflow-x: hidden;
@@ -97,20 +96,29 @@
 /* Header */
 .profile-header {
   margin-bottom: 2rem;
-  text-align: center;
+  text-align: left;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .header-content h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: white;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #3b82f6;
+  margin: 0;
 }
 
 .header-content p {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  color: #64748b;
   margin: 0;
 }
 
@@ -192,7 +200,15 @@
   margin: 0 0 0.5rem 0;
 }
 
-.user-role,
+.user-role {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0;
+}
+
 .user-email {
   display: flex;
   align-items: center;
@@ -200,6 +216,27 @@
   font-size: 0.9rem;
   color: #6b7280;
   margin: 0.25rem 0;
+}
+
+.role-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.email-text {
+  background: #f8fafc;
+  color: #475569;
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .role-icon,
@@ -213,10 +250,11 @@
   gap: 1rem;
 }
 
-/* Buttons */
-.btn {
+/* Buttons - Scoped to profile page */
+.profile-page .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -228,9 +266,10 @@
   text-decoration: none;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-.btn::before {
+.profile-page .btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -241,61 +280,61 @@
   transition: left 0.5s;
 }
 
-.btn:hover::before {
+.profile-page .btn:hover::before {
   left: 100%;
 }
 
-.btn-primary {
+.profile-page .btn-primary {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.btn-primary:hover {
+.profile-page .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
-.btn-primary.active {
+.profile-page .btn-primary.active {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
-.btn-secondary {
+.profile-page .btn-secondary {
   background: #f3f4f6;
   color: #374151;
   border: 1px solid #d1d5db;
 }
 
-.btn-secondary:hover {
+.profile-page .btn-secondary:hover {
   background: #e5e7eb;
   transform: translateY(-1px);
 }
 
-.btn-outline {
+.profile-page .btn-outline {
   background: transparent;
   color: #667eea;
   border: 2px solid #667eea;
 }
 
-.btn-outline:hover {
+.profile-page .btn-outline:hover {
   background: #667eea;
   color: white;
   transform: translateY(-1px);
 }
 
-.btn-outline.active {
+.profile-page .btn-outline.active {
   background: #ef4444;
   border-color: #ef4444;
   color: white;
 }
 
-.btn:disabled {
+.profile-page .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
 
-.btn-icon {
+.profile-page .btn-icon {
   width: 16px;
   height: 16px;
 }
@@ -324,36 +363,42 @@
   gap: 1.5rem;
 }
 
-.form-group {
+.form-group,
+.profile-form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-group label {
+.form-group label,
+.profile-form-group label {
   font-weight: 500;
   color: #374151;
   font-size: 0.9rem;
 }
 
-.input-wrapper {
+.input-wrapper,
+.profile-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.input-icon {
+.input-icon,
+.profile-input-icon {
   position: absolute;
   left: 1rem;
   width: 18px;
   height: 18px;
   color: #9ca3af;
   z-index: 1;
+  flex-shrink: 0;
 }
 
-.form-input {
+.form-input,
+.profile-form-input {
   width: 100%;
-  padding: 0.875rem 1rem 0.875rem 3rem;
+  padding: 0.875rem 1rem 0.875rem 3.5rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -361,25 +406,54 @@
   background: #fafafa;
 }
 
-.form-input:focus {
+.form-input:focus,
+.profile-form-input:focus {
   outline: none;
   border-color: #667eea;
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-input.disabled {
+.form-input.disabled,
+.profile-form-input.disabled {
   background: #f3f4f6;
   color: #6b7280;
   cursor: not-allowed;
 }
 
-.form-input.error {
+/* View-only password field styles */
+.profile-form-input.view-only-password {
+  background: #f8fafc;
+  color: #374151;
+  cursor: default;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.profile-form-input.view-only-password:focus {
+  border-color: #d1d5db;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.profile-password-toggle.disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.profile-password-toggle.disabled:hover {
+  color: #d1d5db;
+}
+
+.form-input.error,
+.profile-form-input.error {
   border-color: #ef4444;
   background: #fef2f2;
 }
 
-.password-toggle {
+.password-toggle,
+.profile-password-toggle {
   position: absolute;
   right: 1rem;
   background: none;
@@ -391,22 +465,28 @@
   transition: color 0.2s ease;
 }
 
-.password-toggle:hover {
+.password-toggle:hover,
+.profile-password-toggle:hover {
   color: #667eea;
 }
 
-.password-toggle svg {
+.password-toggle svg,
+.profile-password-toggle svg {
   width: 18px;
   height: 18px;
+  display: block;
+  flex-shrink: 0;
 }
 
-.form-note {
+.form-note,
+.profile-form-note {
   font-size: 0.8rem;
   color: #6b7280;
   font-style: italic;
 }
 
-.error-message {
+.error-message,
+.profile-error-message {
   font-size: 0.8rem;
   color: #ef4444;
   margin-top: 0.25rem;
@@ -438,6 +518,12 @@
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e5e7eb;
+}
+
+.profile-page .form-actions .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: auto;
 }
 
 /* Security Info */

@@ -42,23 +42,23 @@ export class EmailService {
           </div>
           <div class="content">
             <h2>Hello${displayName}!</h2>
-            <p>May natanggap kaming request para i-reset ang iyong password. Gamitin ang One-Time Password (OTP) sa ibaba para kumpirmahin ang iyong kahilingan:</p>
+            <p>We received a request to reset your password. Use the One-Time Password (OTP) below to confirm your request:</p>
 
             <div class="otp-box">
-              <p>Ang iyong password reset code ay:</p>
+              <p>Your password reset code is:</p>
               <div class="otp-code">${otp}</div>
-              <p style="margin-top: 15px; color: #6b7280;">Ang code na ito ay mag-e-expire sa loob ng 10 minuto</p>
+              <p style="margin-top: 15px; color: #6b7280;">This code will expire within 10 minutes</p>
             </div>
 
             <div class="warning">
-              <strong>Babala sa Seguridad:</strong> Huwag kailanman ibahagi ang code na ito kaninuman. Hindi kailanman hihingin ng ${siteName} ang iyong OTP sa email o telepono.
+              <strong>Security Warning:</strong> Never share this code with anyone. ${siteName} will never ask for your OTP via email or phone.
             </div>
 
-            <p>Kung hindi ikaw ang nag-request nito, maaari mo nang balewalain ang email na ito.</p>
+            <p>If you didn't request this, you can safely ignore this email.</p>
           </div>
           <div class="footer">
-            <p>&copy; 2025 ${siteName}. Lahat ng karapatan ay nakalaan.</p>
-            <p>Automated message ito, huwag sagutin ang email na ito.</p>
+            <p>&copy; 2025 ${siteName}. All rights reserved.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
           </div>
         </div>
       </body>
@@ -68,18 +68,18 @@ export class EmailService {
     const textContent = `
     Hello${displayName}!
 
-    May natanggap kaming request para i-reset ang iyong password. Gamitin ang OTP code sa ibaba:
+    We received a request to reset your password. Use the OTP code below:
 
-    Ang iyong password reset code ay: ${otp}
+    Your password reset code is: ${otp}
 
-    Mag-e-expire ito sa loob ng 10 minuto.
+    This will expire within 10 minutes.
 
-    Babala sa Seguridad: Huwag kailanman ibahagi ang code na ito kaninuman. Hindi kailanman hihingin ng ${siteName} ang iyong OTP sa email o telepono.
+    Security Warning: Never share this code with anyone. ${siteName} will never ask for your OTP via email or phone.
 
-    Kung hindi ikaw ang nag-request nito, maaari mong balewalain ang email na ito.
+    If you didn't request this, you can safely ignore this email.
 
-    © 2025 ${siteName}. Lahat ng karapatan ay nakalaan.
-    Automated message ito, huwag sagutin ang email na ito.
+    © 2025 ${siteName}. All rights reserved.
+    This is an automated message, please do not reply to this email.
   `;
 
     try {

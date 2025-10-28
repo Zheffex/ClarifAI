@@ -5,8 +5,9 @@ import { authService } from '../services/authService';
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  markEmailVerified: () => void;
 }
 
 type AuthAction =
@@ -14,12 +15,13 @@ type AuthAction =
   | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
   | { type: 'LOGIN_FAILURE' }
   | { type: 'LOGOUT' }
-  | { type: 'UPDATE_PROFILE'; payload: User };
+  | { type: 'UPDATE_PROFILE'; payload: User }
+  | { type: 'MARK_EMAIL_VERIFIED' };
 
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
-  isLoading: false,
+  isLoading: !!localStorage.getItem('token'), // Set loading to true if token exists
   isAuthenticated: false,
 };
 
@@ -41,12 +43,17 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, user: null, token: null, isAuthenticated: false };
     case 'UPDATE_PROFILE':
       return { ...state, user: action.payload };
+    case 'MARK_EMAIL_VERIFIED':
+      return {
+        ...state,
+        user: state.user ? { ...state.user, isEmailVerified: true } : null,
+      };
     default:
       return state;
   }
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
@@ -78,24 +85,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const { user, token } = await authService.register(data);
-      localStorage.setItem('token', token);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
+      // For OTP flow, we don't want to automatically log in
+      // Just register the user and let them verify via OTP
+      await authService.register(data);
+      // Don't store token or dispatch LOGIN_SUCCESS here
+      // The user will be logged in after OTP verification
+      dispatch({ type: 'LOGIN_FAILURE' }); // Reset to not logged in state
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    authService.logout();
-    dispatch({ type: 'LOGOUT' });
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      // Ignore logout errors
+    } finally {
+      localStorage.removeItem('token');
+      dispatch({ type: 'LOGOUT' });
+    }
   };
 
   const updateProfile = async (data: Partial<User>) => {
     const updatedUser = await authService.updateProfile(data);
     dispatch({ type: 'UPDATE_PROFILE', payload: updatedUser });
+  };
+
+  const markEmailVerified = () => {
+    dispatch({ type: 'MARK_EMAIL_VERIFIED' });
   };
 
   const value: AuthContextType = {
@@ -104,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     logout,
     updateProfile,
+    markEmailVerified,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

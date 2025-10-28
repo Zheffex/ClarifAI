@@ -184,6 +184,68 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response): 
   return;
 });
 
+// Verify Forgot Password OTP
+export const verifyForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email, otp } = req.body;
+  
+  // Find user
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Verify OTP with type 'password_reset'
+  const verificationResult = await otpService.verifyOTP(email.toLowerCase(), otp, 'password_reset');
+  
+  if (!verificationResult.success) {
+    throw new AppError(verificationResult.message, 400);
+  }
+
+  // Store email and timestamp in response for token generation
+  logger.info(`OTP verified for password reset: ${email}`);
+
+  res.json({
+    success: true,
+    message: 'OTP verified successfully. You can now reset your password.',
+    data: {
+      email: email.toLowerCase()
+    }
+  });
+});
+
+// Reset Password (after OTP verification)
+export const resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+
+  // Find user
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Check if there's a recently verified OTP for password reset
+  const otpRecord = await OTPVerification.findOne({
+    email: email.toLowerCase(),
+    type: 'password_reset',
+    isUsed: true
+  }).sort({ updatedAt: -1 });
+
+  // Allow password reset if OTP was verified within the last hour
+  if (!otpRecord || (Date.now() - new Date(otpRecord.updatedAt).getTime() > 3600000)) {
+    throw new AppError('Please verify your email with OTP first', 400);
+  }
+
+  // Update password
+  user.passwordHash = password; // Will be hashed by pre-save middleware
+  await user.save();
+
+  logger.info(`Password reset for user: ${email}`);
+
+  res.json({
+    success: true,
+    message: 'Password reset successfully'
+  });
+});
 
 // Resend OTP
 export const resendOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {

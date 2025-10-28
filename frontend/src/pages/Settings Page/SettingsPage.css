@@ -1,0 +1,481 @@
+/* Modern Settings Page Styles */
+.settings-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Notifications */
+.notification {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.notification-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Header */
+.settings-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Content Layout */
+.settings-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+/* Cards */
+.settings-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+.danger-card {
+  border: 2px solid #ef4444;
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-title h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.card-icon {
+  width: 28px;
+  height: 28px;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Setting Items */
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-info label {
+  display: block;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.setting-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e5e7eb;
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .slider {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .slider {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Theme Options */
+.theme-options {
+  display: flex;
+  gap: 1rem;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.theme-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.theme-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.theme-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Setting Select */
+.setting-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Setting Input */
+.setting-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  background: white;
+  color: #374151;
+  transition: all 0.3s ease;
+  width: 100px;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Danger Zone */
+.danger-zone-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.danger-zone-content p {
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  padding: 1rem 2rem;
+  font-size: 1rem;
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Settings Footer */
+.settings-footer {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 1rem;
+  }
+
+  .header-content h1 {
+    font-size: 2rem;
+  }
+
+  .settings-content {
+    gap: 1.5rem;
+  }
+
+  .settings-card {
+    padding: 1.5rem;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .theme-options {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .theme-btn {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .danger-zone-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .notification {
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-page {
+    padding: 0.5rem;
+  }
+
+  .settings-card {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .header-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .card-title h3 {
+    font-size: 1.25rem;
+  }
+}

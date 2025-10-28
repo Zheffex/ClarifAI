@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dataset } from '../../types/api';
 import { ChartConfig, ChartService } from '../../services/chartService';
 import Chart from '../Chart';
+import apiClient from '../../services/apiClient';
 import './ChartBuilder.css';
 
 interface ChartBuilderProps {
@@ -58,30 +59,14 @@ const ChartBuilder: React.FC<ChartBuilderProps> = ({
   const loadDatasetInfo = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      // Load schema and preview data
+      // Load schema and preview data using apiClient
       const [schemaResponse, previewResponse] = await Promise.all([
-        fetch(`/api/datasets/${dataset._id}/schema`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`/api/datasets/${dataset._id}/preview?limit=1000`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        apiClient.get(`/datasets/${dataset._id}/schema`),
+        apiClient.get(`/datasets/${dataset._id}/preview?limit=1000`)
       ]);
 
-      if (!schemaResponse.ok || !previewResponse.ok) {
-        throw new Error('Failed to load dataset information');
-      }
-
-      const schemaData = await schemaResponse.json();
-      const previewData = await previewResponse.json();
+      const schemaData = schemaResponse.data;
+      const previewData = previewResponse.data;
 
       // Process fields information
       const fieldInfo: FieldInfo[] = schemaData.data.schema.fields.map((field: any) => {

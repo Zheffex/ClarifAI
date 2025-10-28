@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Dataset } from '../../types/api';
+import apiClient from '../../services/apiClient';
 import './DataQualityReport.css';
 
 interface DataQualityReportProps {
   dataset: Dataset;
   onClose?: () => void;
+  onQualityDataLoaded?: () => void;
 }
 
 interface QualityData {
@@ -35,7 +37,7 @@ interface QualityData {
   };
 }
 
-const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose }) => {
+const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose, onQualityDataLoaded }) => {
   const [qualityData, setQualityData] = useState<QualityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,21 +52,13 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
+      const response = await apiClient.get(`/datasets/${dataset._id}/validate`);
+      setQualityData(response.data.data);
       
-      const response = await fetch(`/api/datasets/${dataset._id}/validate`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load quality data');
+      // Call the callback to notify parent component that quality data is loaded
+      if (onQualityDataLoaded) {
+        onQualityDataLoaded();
       }
-
-      const result = await response.json();
-      setQualityData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load quality report');
     } finally {
@@ -168,11 +162,6 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
               <div className="stat-percentage">
                 {formatPercentage(validation.validRows / validation.totalRows)}
               </div>
-            </div>
-            
-            <div className="stat-card errors">
-              <div className="stat-value">{validation.errorCount.toLocaleString()}</div>
-              <div className="stat-label">Errors</div>
             </div>
             
             <div className="stat-card warnings">
@@ -323,49 +312,46 @@ const DataQualityReport: React.FC<DataQualityReportProps> = ({ dataset, onClose 
   }
 
   return (
-    <div className="quality-report-overlay">
-      <div className="quality-report-modal">
-        <div className="quality-report-header">
-          <h2>Data Quality Report</h2>
-          <div className="view-mode-tabs">
-            <button
-              className={viewMode === 'overview' ? 'active' : ''}
-              onClick={() => setViewMode('overview')}
-            >
-              Overview
-            </button>
-            <button
-              className={viewMode === 'dimensions' ? 'active' : ''}
-              onClick={() => setViewMode('dimensions')}
-            >
-              Dimensions
-            </button>
-            <button
-              className={viewMode === 'fields' ? 'active' : ''}
-              onClick={() => setViewMode('fields')}
-            >
-              Fields ({Object.keys(qualityData.validation.fieldSummary).length})
-            </button>
-            <button
-              className={viewMode === 'recommendations' ? 'active' : ''}
-              onClick={() => setViewMode('recommendations')}
-            >
-              Recommendations ({qualityData.qualityReport.recommendations.length})
-            </button>
-          </div>
-          {onClose && (
-            <button onClick={onClose} className="close-button">
-              ✕
-            </button>
-          )}
+    <div className="quality-report-container">
+      <div className="quality-report-header">
+        <div className="view-mode-tabs">
+          <button
+            className={viewMode === 'overview' ? 'active' : ''}
+            onClick={() => setViewMode('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={viewMode === 'dimensions' ? 'active' : ''}
+            onClick={() => setViewMode('dimensions')}
+          >
+            Dimensions
+          </button>
+          <button
+            className={viewMode === 'fields' ? 'active' : ''}
+            onClick={() => setViewMode('fields')}
+          >
+            Fields ({Object.keys(qualityData.validation.fieldSummary).length})
+          </button>
+          <button
+            className={viewMode === 'recommendations' ? 'active' : ''}
+            onClick={() => setViewMode('recommendations')}
+          >
+            Recommendations ({qualityData.qualityReport.recommendations.length})
+          </button>
         </div>
-        
-        <div className="quality-report-content">
-          {viewMode === 'overview' && renderOverview()}
-          {viewMode === 'dimensions' && renderDimensions()}
-          {viewMode === 'fields' && renderFields()}
-          {viewMode === 'recommendations' && renderRecommendations()}
-        </div>
+        {onClose && (
+          <button onClick={onClose} className="close-button">
+            ✕
+          </button>
+        )}
+      </div>
+      
+      <div className="quality-report-content">
+        {viewMode === 'overview' && renderOverview()}
+        {viewMode === 'dimensions' && renderDimensions()}
+        {viewMode === 'fields' && renderFields()}
+        {viewMode === 'recommendations' && renderRecommendations()}
       </div>
     </div>
   );

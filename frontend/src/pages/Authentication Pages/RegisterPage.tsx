@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  ArrowRight,
+  Shield,
+  Zap,
+  Users,
+  FileText
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotification } from '../../contexts/NotificationContext';
 import { RegisterData } from '../../types';
-import { useNavigate } from 'react-router-dom';
 import './AuthPages.css';
 
 interface ValidationErrors {
@@ -12,12 +25,13 @@ interface ValidationErrors {
   confirmPassword?: string;
   firstName?: string;
   lastName?: string;
+  general?: string;
 }
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
-  const { addNotification } = useNotification();
+  const { register, isLoading, isAuthenticated, user } = useAuth();
+
   const [formData, setFormData] = useState<RegisterData>({
     email: '',
     password: '',
@@ -26,10 +40,20 @@ const RegisterPage: React.FC = () => {
     role: 'viewer'
   });
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Validation functions
   const validateEmail = (email: string): string | undefined => {
@@ -177,167 +201,305 @@ const RegisterPage: React.FC = () => {
     setTouchedFields(new Set(['email', 'password', 'confirmPassword', 'firstName', 'lastName']));
 
     if (Object.keys(errors).length > 0) {
-      addNotification({
-        type: 'error',
-        title: 'Validation Error',
-        message: 'Please fix the errors in the form before submitting.'
-      });
       setIsSubmitting(false);
       return;
     }
 
     try {
-
       await register(formData);
-
-      addNotification({
-        type: 'success',
-        title: 'Registration Successful',
-        message: 'Welcome to ClarifAI! Your account has been created.'
-
-      });
-      localStorage.setItem('email', formData.email)
-        navigate('/verify');
-
+      
+      // Store email for OTP verification
+      localStorage.setItem('email', formData.email);
+      localStorage.setItem('otpFlow', 'register');
+      
+      // Navigate to OTP verification page
+      navigate('/verify');
     } catch (error: any) {
-      addNotification({
-        type: 'error',
-        title: 'Registration Failed',
-        message: error.message || 'Failed to create account. Please try again.'
-      });
+      console.error('Registration error:', error);
+      
+      // Handle specific error cases
+      if (error.message.includes('Email already exists') || error.message.includes('409')) {
+        setValidationErrors({ 
+          email: 'An account with this email already exists. Please use a different email or try signing in.' 
+        });
+      } else if (error.message.includes('Invalid email')) {
+        setValidationErrors({ 
+          email: 'Please enter a valid email address.' 
+        });
+      } else {
+        setValidationErrors({ 
+          general: error.message || 'Registration failed. Please try again.' 
+        } as ValidationErrors);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid = 
-    !Object.keys(validationErrors).length &&
-    formData.email && 
-    formData.password && 
+  // Check if step 1 is complete
+  const isStep1Complete = 
     formData.firstName && 
     formData.lastName && 
-    confirmPassword &&
+    formData.email && 
+    !validationErrors.firstName && 
+    !validationErrors.lastName && 
+    !validationErrors.email;
+
+  // Check if step 2 is complete
+  const isStep2Complete = 
+    formData.password && 
+    confirmPassword && 
+    !validationErrors.password && 
+    !validationErrors.confirmPassword &&
     formData.password === confirmPassword;
+
+  const isFormValid = isStep1Complete && isStep2Complete;
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <div className="auth-wrapper">
+        {/* Left Info Section */}
+        <div className="auth-info">
+          <div className="info-card">
+            <div className="info-content">
+              <div className="logo-section">
+                <div className="logo-icon">
+                  <Zap className="logo-svg" />
+                </div>
+                <h1 className="logo-text">ClarifAI</h1>
+              </div>
+              <div className="welcome-content">
+                <h2>Join ClarifAI Today!</h2>
+                <p>Start your journey with AI-powered data analysis and unlock insights from your data.</p>
+                <div className="features-list">
+                  <div className="feature-item">
+                    <Users className="feature-icon" />
+                    <span>Collaborative Analysis</span>
+                  </div>
+                  <div className="feature-item">
+                    <FileText className="feature-icon" />
+                    <span>Multiple Data Formats</span>
+                  </div>
+                  <div className="feature-item">
+                    <Shield className="feature-icon" />
+                    <span>Enterprise Security</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Register Card */}
+        <div className="auth-card">
         <div className="auth-header">
-          <title>Register</title>
-          <h2 className="auth-title">Create Account</h2>
-          <p className="auth-subtitle">Join ClarifAI and start analyzing your data with AI.</p>
+          <div className="header-content">
+            <h2 className="auth-title">Create Account</h2>
+            <p className="auth-subtitle">Step {currentStep} of 2</p>
+          </div>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="firstName" className="form-label">First Name</label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                className={`form-input ${
-                  touchedFields.has('firstName') && validationErrors.firstName ? 'error' : ''
-                } ${
-                  touchedFields.has('firstName') && !validationErrors.firstName && formData.firstName ? 'success' : ''
-                }`}
-                placeholder="Enter your first name"
-                value={formData.firstName}
-                onChange={handleChange}
-                onBlur={() => handleFieldBlur('firstName')}
-                required
-                disabled={isSubmitting || isLoading}
-              />
-              {touchedFields.has('firstName') && validationErrors.firstName && (
-                <div className="field-error">{validationErrors.firstName}</div>
-              )}
+          {/* General Error Message */}
+          {validationErrors.general && (
+            <div className="error-message general-error">
+              <AlertCircle className="error-icon" />
+              <span>{validationErrors.general}</span>
             </div>
+          )}
 
-            <div className="form-group">
-              <label htmlFor="lastName" className="form-label">Last Name</label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                className={`form-input ${
-                  touchedFields.has('lastName') && validationErrors.lastName ? 'error' : ''
-                } ${
-                  touchedFields.has('lastName') && !validationErrors.lastName && formData.lastName ? 'success' : ''
-                }`}
-                placeholder="Enter your last name"
-                value={formData.lastName}
-                onChange={handleChange}
-                onBlur={() => handleFieldBlur('lastName')}
-                required
-                disabled={isSubmitting || isLoading}
-              />
-              {touchedFields.has('lastName') && validationErrors.lastName && (
-                <div className="field-error">{validationErrors.lastName}</div>
-              )}
+          {/* Step 1: Personal Information */}
+          {currentStep === 1 && (
+            <div className="form-step">
+              <>
+              {/* Name Fields */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="firstName" className="form-label">
+                    First Name
+                  </label>
+                  <div className="input-wrapper">
+                    <User className="label-icon" />
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      className={`form-input ${
+                        touchedFields.has('firstName') && validationErrors.firstName ? 'error' : ''
+                      } ${
+                        touchedFields.has('firstName') && !validationErrors.firstName && formData.firstName ? 'success' : ''
+                      }`}
+                      placeholder="Enter your first name"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      onBlur={() => handleFieldBlur('firstName')}
+                      required
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {formData.firstName && !validationErrors.firstName && (
+                      <CheckCircle className="input-success-icon" />
+                    )}
+                  </div>
+                  {touchedFields.has('firstName') && validationErrors.firstName && (
+                    <div className="field-error">
+                      <AlertCircle className="error-icon" />
+                      {validationErrors.firstName}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="lastName" className="form-label">
+                    Last Name
+                  </label>
+                  <div className="input-wrapper">
+                    <User className="label-icon" />
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      className={`form-input ${
+                        touchedFields.has('lastName') && validationErrors.lastName ? 'error' : ''
+                      } ${
+                        touchedFields.has('lastName') && !validationErrors.lastName && formData.lastName ? 'success' : ''
+                      }`}
+                      placeholder="Enter your last name"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      onBlur={() => handleFieldBlur('lastName')}
+                      required
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {formData.lastName && !validationErrors.lastName && (
+                      <CheckCircle className="input-success-icon" />
+                    )}
+                  </div>
+                  {touchedFields.has('lastName') && validationErrors.lastName && (
+                    <div className="field-error">
+                      <AlertCircle className="error-icon" />
+                      {validationErrors.lastName}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">
+                  Email Address
+                </label>
+                <div className="input-wrapper">
+                  <Mail className="label-icon" />
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    className={`form-input ${
+                      touchedFields.has('email') && validationErrors.email ? 'error' : ''
+                    } ${
+                      touchedFields.has('email') && !validationErrors.email && formData.email ? 'success' : ''
+                    }`}
+                    placeholder="Enter your email address"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={() => handleFieldBlur('email')}
+                    required
+                    disabled={isSubmitting || isLoading}
+                    autoComplete="email"
+                  />
+                  {formData.email && !validationErrors.email && (
+                    <CheckCircle className="input-success-icon" />
+                  )}
+                </div>
+                {touchedFields.has('email') && validationErrors.email && (
+                  <div className="field-error">
+                    <AlertCircle className="error-icon" />
+                    {validationErrors.email}
+                  </div>
+                )}
+              </div>
+
+              {/* Role Selection */}
+              <div className="form-group">
+                <label htmlFor="role" className="form-label">
+                  Role
+                </label>
+                <div className="input-wrapper">
+                  <Users className="label-icon" />
+                  <select
+                    id="role"
+                    name="role"
+                    className="form-input"
+                    value={formData.role}
+                    onChange={handleChange}
+                    disabled={isSubmitting || isLoading}
+                  >
+                    <option value="viewer">Viewer - View and explore data</option>
+                    <option value="analyst">Analyst - Create and manage analyses</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Next Button for Step 1 */}
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className={`auth-button ${!isStep1Complete ? 'disabled' : ''}`}
+                  onClick={() => setCurrentStep(2)}
+                  disabled={!isStep1Complete || isSubmitting || isLoading}
+                >
+                  Continue
+                  <ArrowRight className="btn-icon" />
+                </button>
+              </div>
+              </>
             </div>
-          </div>
+          )}
 
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className={`form-input ${
-                touchedFields.has('email') && validationErrors.email ? 'error' : ''
-              } ${
-                touchedFields.has('email') && !validationErrors.email && formData.email ? 'success' : ''
-              }`}
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={() => handleFieldBlur('email')}
-              required
-              disabled={isSubmitting || isLoading}
-            />
-            {touchedFields.has('email') && validationErrors.email && (
-              <div className="field-error">{validationErrors.email}</div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="role" className="form-label">Role</label>
-            <select
-              id="role"
-              name="role"
-              className="form-input"
-              value={formData.role}
-              onChange={handleChange}
-              disabled={isSubmitting || isLoading}
-            >
-              <option value="viewer">Viewer - View and explore data</option>
-              <option value="analyst">Analyst - Create and manage analyses</option>
-            </select>
-          </div>
-
-          <div className="form-row">
+          {/* Step 2: Password Creation */}
+          {currentStep === 2 && (
+            <div className="form-step">
+              <>
+              {/* Password Fields */}
+              <div className="form-row">
             <div className="form-group">
-              <label htmlFor="password" className="form-label">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                className={`form-input ${
-                  touchedFields.has('password') && validationErrors.password ? 'error' : ''
-                } ${
-                  touchedFields.has('password') && !validationErrors.password && formData.password ? 'success' : ''
-                }`}
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={() => handleFieldBlur('password')}
-                onFocus={() => setShowPasswordRequirements(true)}
-                required
-                minLength={6}
-                disabled={isSubmitting || isLoading}
-              />
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <div className="input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  className={`form-input ${
+                    touchedFields.has('password') && validationErrors.password ? 'error' : ''
+                  } ${
+                    touchedFields.has('password') && !validationErrors.password && formData.password ? 'success' : ''
+                  }`}
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={() => handleFieldBlur('password')}
+                  onFocus={() => setShowPasswordRequirements(true)}
+                  required
+                  minLength={6}
+                  disabled={isSubmitting || isLoading}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting || isLoading}
+                >
+                  {showPassword ? <EyeOff className="toggle-icon" /> : <Eye className="toggle-icon" />}
+                </button>
+              </div>
               {touchedFields.has('password') && validationErrors.password && (
-                <div className="field-error">{validationErrors.password}</div>
+                <div className="field-error">
+                  <AlertCircle className="error-icon" />
+                  {validationErrors.password}
+                </div>
               )}
               {formData.password && (
                 <div className="password-strength">
@@ -345,7 +507,7 @@ const RegisterPage: React.FC = () => {
                     <div 
                       className="strength-fill"
                       style={{ 
-                        width: `${(passwordStrength.score / 6) * 100}%`,
+                        width: `${(passwordStrength.score / 5) * 100}%`,
                         backgroundColor: passwordStrength.color
                       }}
                     ></div>
@@ -355,8 +517,54 @@ const RegisterPage: React.FC = () => {
                   </span>
                 </div>
               )}
+            </div>
 
-              {/* CODE */}
+            <div className="form-group">
+              <label htmlFor="confirmPassword" className="form-label">
+                Confirm Password
+              </label>
+              <div className="input-wrapper">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className={`form-input ${
+                    touchedFields.has('confirmPassword') && validationErrors.confirmPassword ? 'error' : ''
+                  } ${
+                    touchedFields.has('confirmPassword') && !validationErrors.confirmPassword && confirmPassword ? 'success' : ''
+                  }`}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  onBlur={() => handleFieldBlur('confirmPassword')}
+                  required
+                  disabled={isSubmitting || isLoading}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isSubmitting || isLoading}
+                >
+                  {showConfirmPassword ? <EyeOff className="toggle-icon" /> : <Eye className="toggle-icon" />}
+                </button>
+              </div>
+              {touchedFields.has('confirmPassword') && validationErrors.confirmPassword && (
+                <div className="field-error">
+                  <AlertCircle className="error-icon" />
+                  {validationErrors.confirmPassword}
+                </div>
+              )}
+              {confirmPassword && !validationErrors.confirmPassword && formData.password === confirmPassword && (
+                <div className="field-success">
+                  Passwords match!
+                </div>
+              )}
+            </div>
+          </div>
+
+              {/* Password Requirements */}
               {showPasswordRequirements && (
                 <div className="password-requirements">
                   <p className="requirements-title">Password must contain:</p>
@@ -376,71 +584,51 @@ const RegisterPage: React.FC = () => {
                   </ul>
                 </div>
               )}
+
+              {/* Submit Button for Step 2 */}
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="auth-button back-button"
+                  onClick={() => setCurrentStep(1)}
+                  disabled={isSubmitting || isLoading}
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className={`auth-button ${!isStep2Complete ? 'disabled' : ''}`}
+                  disabled={!isStep2Complete || isSubmitting || isLoading}
+                >
+                  {isSubmitting || isLoading ? (
+                    <>
+                      <Loader2 className="btn-icon spinning" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <ArrowRight className="btn-icon" />
+                    </>
+                  )}
+                </button>
+              </div>
+              </>
             </div>
+          )}
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                className={`form-input ${
-                  touchedFields.has('confirmPassword') && validationErrors.confirmPassword ? 'error' : ''
-                } ${
-                  touchedFields.has('confirmPassword') && !validationErrors.confirmPassword && confirmPassword ? 'success' : ''
-                }`}
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={handleConfirmPasswordChange}
-                onBlur={() => handleFieldBlur('confirmPassword')}
-                required
-                disabled={isSubmitting || isLoading}
-              />
-              {touchedFields.has('confirmPassword') && validationErrors.confirmPassword && (
-                <div className="field-error">{validationErrors.confirmPassword}</div>
-              )}
-              {confirmPassword && !validationErrors.confirmPassword && formData.password === confirmPassword && (
-                <div className="field-success">Passwords match!</div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className={`auth-button ${!isFormValid ? 'disabled' : ''}`}
-              disabled={!isFormValid || isSubmitting || isLoading}
-            >
-              {isSubmitting ? (
-                <span className="loading-spinner">Creating Account...</span>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </div>
-
+          {/* Footer */}
           <div className="auth-footer">
             <p>
               Already have an account?{' '}
-              <Link to="/login" className="auth-link-SignIn">
-                Sign in here
+              <Link to="/login" className="auth-link">
+                Sign In
               </Link>
             </p>
           </div>
         </form>
-      </div>
-
-      <div className="auth-info">
-        <div className="info-card">
-          <img
-            src="logo512.png"
-            alt="ClarifAI preview"
-            className="info-image"
-          />
-          <h3>ClarifAI</h3>
         </div>
       </div>
-
     </div>
   );
 };

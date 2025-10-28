@@ -34,7 +34,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDataset } from "../../contexts/DatasetContext";
 import { useAnalytics } from "../../contexts/AnalyticsContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import { dashboardService, DashboardStats } from "../../services/dashboardService";
+import { notificationService } from "../../services/notificationService";
+import AIChat from "../../components/AIChat/AIChat";
 import "./DashboardPage.css";
 
 interface QuickAction {
@@ -68,18 +71,20 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { datasets, isLoading: datasetsLoading } = useDataset();
+  const { notifications, addNotification, clearAll } = useNotification();
   
   // State management
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'info';
     message: string;
   } | null>(null);
+  const [analysisSessions, setAnalysisSessions] = useState<any[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [shouldShowNullValues, setShouldShowNullValues] = useState(true);
 
   // Mock data for demonstration
   const quickActions: QuickAction[] = [
@@ -152,32 +157,15 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
-  const notifications: NotificationItem[] = [
-    {
-      id: '1',
-      title: 'Analysis Complete',
-      message: 'Market Trends Analysis has finished processing',
-      type: 'success',
-      timestamp: '2 hours ago',
-      isRead: false
-    },
-    {
-      id: '2',
-      title: 'New Collaboration',
-      message: 'You have been invited to join "Q4 Planning" project',
-      type: 'info',
-      timestamp: '4 hours ago',
-      isRead: false
-    },
-    {
-      id: '3',
-      title: 'Data Quality Alert',
-      message: 'Customer data has 5% missing values',
-      type: 'warning',
-      timestamp: '6 hours ago',
-      isRead: true
-    }
-  ];
+  // Convert context notifications to display format
+  const displayNotifications = notifications.map(notif => ({
+    id: notif.id,
+    title: notif.title || 'Notification',
+    message: notif.message,
+    type: notif.type as 'success' | 'warning' | 'info' | 'error',
+    timestamp: notif.timestamp.toLocaleString(),
+    isRead: notif.isRead || false
+  }));
 
   // Chart data for insights
   const chartData = {
@@ -194,13 +182,50 @@ const DashboardPage: React.FC = () => {
   // Load dashboard data
   useEffect(() => {
     loadDashboardData();
+    fetchAnalysisSessions();
+    
+    // Add some sample notifications for demonstration
+    if (notifications.length === 0) {
+      addNotification({
+        title: 'Welcome to ClarifAI!',
+        message: 'Your dashboard is ready. Start by uploading a dataset.',
+        type: 'info',
+        autoClose: false,
+        isRead: false
+      });
+      
+      addNotification({
+        title: 'System Update',
+        message: 'New features have been added to the analytics section.',
+        type: 'success',
+        isRead: false
+      });
+    }
   }, []);
+
+  // Update stats when datasets change
+  useEffect(() => {
+    if (datasets && datasets.length > 0) {
+      loadDashboardData();
+      fetchAnalysisSessions();
+    }
+  }, [datasets]);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
+      // Show null values initially
+      setShouldShowNullValues(true);
+      setStats(null);
+      
+      // Wait a moment to show the null state
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const data = await dashboardService.getStats();
       setStats(data);
+      
+      // Show real data after fetching
+      setShouldShowNullValues(false);
     } catch (error: any) {
       console.error("Failed to load dashboard stats:", error);
       // Set mock data if API fails
@@ -212,6 +237,7 @@ const DashboardPage: React.FC = () => {
         dataQualityScore: 87,
         storageUsed: '2.5 GB'
       });
+      setShouldShowNullValues(false);
     } finally {
       setIsLoading(false);
     }
@@ -233,6 +259,123 @@ const DashboardPage: React.FC = () => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
+
+  // Fetch analysis sessions
+  const fetchAnalysisSessions = async () => {
+    try {
+      const response = await dashboardService.getRecentActivity(50);
+      const analysisActivities = response.filter(activity => 
+        activity.type === 'analysis_created' || activity.type === 'analysis_completed'
+      );
+      setAnalysisSessions(analysisActivities);
+    } catch (error) {
+      console.error('Failed to fetch analysis sessions:', error);
+    }
+  };
+
+  // Create new analysis session
+  const createAnalysisSession = async (datasetId?: string) => {
+    if (!user) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const response = await apiClient.post('/analytics/sessions', {
+        datasetId: datasetId || datasets?.[0]?._id,
+        title: `Analysis - ${new Date().toLocaleDateString()}`
+      });
+      
+      if (response.data.success) {
+        // Refresh stats to get updated analysis count
+        await fetchStats();
+        await fetchAnalysisSessions();
+        
+        showNotification('success', 'Analysis session created successfully!');
+        
+        // Navigate to analytics page with the new session
+        navigate(`/analytics?session=${response.data.data.session._id}`);
+      }
+    } catch (error: any) {
+      console.error('Failed to create analysis session:', error);
+      showNotification('error', error.response?.data?.message || 'Failed to create analysis session');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Handle analyze button click
+  const handleAnalyzeClick = () => {
+    if (datasets && datasets.length > 0) {
+      createAnalysisSession();
+    } else {
+      showNotification('info', 'Please upload a dataset first to start analysis');
+      navigate('/datasets');
+    }
+  };
+
+  // Mark analysis as completed (can be called from other components)
+  const markAnalysisCompleted = async (sessionId: string) => {
+    try {
+      // Update the analysis session to mark as completed
+      await apiClient.patch(`/analytics/sessions/${sessionId}`, {
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      });
+      
+      // Trigger the same refresh logic as the event listener
+      setShouldShowNullValues(true);
+      setStats(null);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await loadDashboardData();
+      await fetchAnalysisSessions();
+      
+      setShouldShowNullValues(false);
+      
+      showNotification('success', 'Analysis completed successfully! Dashboard updated.');
+    } catch (error: any) {
+      console.error('Failed to mark analysis as completed:', error);
+      setShouldShowNullValues(false);
+      showNotification('error', 'Failed to mark analysis as completed');
+    }
+  };
+
+  // Expose the function globally for other components to use
+  useEffect(() => {
+    (window as any).markAnalysisCompleted = markAnalysisCompleted;
+    return () => {
+      delete (window as any).markAnalysisCompleted;
+    };
+  }, []);
+
+  // Listen for analysis completion events from other pages
+  useEffect(() => {
+    const handleAnalysisCompleted = async (event: CustomEvent) => {
+      console.log('Analysis completed event received:', event.detail);
+      
+      // Show null values initially
+      setShouldShowNullValues(true);
+      setStats(null);
+      
+      // Wait a moment to show the null state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh dashboard data
+      await loadDashboardData();
+      await fetchAnalysisSessions();
+      
+      // Show real data after fetching
+      setShouldShowNullValues(false);
+      
+      showNotification('success', 'Analysis completed! Dashboard updated.');
+    };
+
+    window.addEventListener('analysisCompleted', handleAnalysisCompleted as EventListener);
+    
+    return () => {
+      window.removeEventListener('analysisCompleted', handleAnalysisCompleted as EventListener);
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -294,27 +437,6 @@ const DashboardPage: React.FC = () => {
             <p>Here's what's happening with your data today</p>
           </div>
           <div className="header-actions">
-            <div className="search-container">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search datasets, sessions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-              />
-            </div>
-            <div className="time-range-selector">
-              <select 
-                value={selectedTimeRange} 
-                onChange={(e) => setSelectedTimeRange(e.target.value as any)}
-                className="time-select"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-              </select>
-            </div>
             <button 
               className="btn btn-outline"
               onClick={handleRefresh}
@@ -329,9 +451,9 @@ const DashboardPage: React.FC = () => {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="notification-icon" />
-                {notifications.filter(n => !n.isRead).length > 0 && (
+                {displayNotifications.filter(n => !n.isRead).length > 0 && (
                   <span className="notification-badge">
-                    {notifications.filter(n => !n.isRead).length}
+                    {displayNotifications.filter(n => !n.isRead).length}
                   </span>
                 )}
               </button>
@@ -339,25 +461,37 @@ const DashboardPage: React.FC = () => {
                 <div className="notifications-dropdown">
                   <div className="notifications-header">
                     <h3>Notifications</h3>
-                    <button className="mark-all-read">Mark all read</button>
+                    <button 
+                      className="mark-all-read"
+                      onClick={() => clearAll()}
+                    >
+                      Mark all read
+                    </button>
                   </div>
                   <div className="notifications-list">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`notification-item ${!notification.isRead ? 'unread' : ''}`}>
-                        <div className="notification-content">
-                          <div className={`notification-type ${notification.type}`}>
-                            {notification.type === 'success' ? <CheckCircle /> :
-                             notification.type === 'warning' ? <AlertCircle /> :
-                             notification.type === 'error' ? <AlertCircle /> : <Zap />}
-                          </div>
-                          <div className="notification-text">
-                            <h4>{notification.title}</h4>
-                            <p>{notification.message}</p>
-                            <span className="notification-time">{notification.timestamp}</span>
+                    {displayNotifications.length > 0 ? (
+                      displayNotifications.map((notification) => (
+                        <div key={notification.id} className={`notification-item ${!notification.isRead ? 'unread' : ''}`}>
+                          <div className="notification-content">
+                            <div className={`notification-type ${notification.type}`}>
+                              {notification.type === 'success' ? <CheckCircle /> :
+                               notification.type === 'warning' ? <AlertCircle /> :
+                               notification.type === 'error' ? <AlertCircle /> : <Zap />}
+                            </div>
+                            <div className="notification-text">
+                              <h4>{notification.title}</h4>
+                              <p>{notification.message}</p>
+                              <span className="notification-time">{notification.timestamp}</span>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="no-notifications">
+                        <Bell className="no-notifications-icon" />
+                        <p>No notifications</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
@@ -369,57 +503,79 @@ const DashboardPage: React.FC = () => {
       {/* Stats Grid */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#3b82f6' }}>
+          <div className="dashboard-stat-icon" style={{ backgroundColor: '#3b82f6' }}>
             <Database className="icon" />
           </div>
           <div className="stat-content">
-            <h3>{stats?.totalDatasets || 0}</h3>
+            <h3 className={shouldShowNullValues ? 'loading-value' : ''}>
+              {shouldShowNullValues ? '--' : (stats?.totalDatasets || 0)}
+            </h3>
             <p>Total Datasets</p>
             <div className="stat-trend positive">
               <ArrowUpRight className="trend-icon" />
-              <span>+12%</span>
+              <span className={shouldShowNullValues ? 'loading-value' : ''}>
+                {shouldShowNullValues ? '--' : '+12%'}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#10b981' }}>
+          <div className="dashboard-stat-icon" style={{ backgroundColor: '#10b981' }}>
             <TrendingUp className="icon" />
           </div>
           <div className="stat-content">
-            <h3>{stats?.totalAnalyses || 0}</h3>
+            <h3 className={shouldShowNullValues ? 'loading-value' : ''}>
+              {shouldShowNullValues ? '--' : (stats?.totalAnalyses || 0)}
+            </h3>
             <p>Analyses Completed</p>
             <div className="stat-trend positive">
               <ArrowUpRight className="trend-icon" />
-              <span>+8%</span>
+              <span className={shouldShowNullValues ? 'loading-value' : ''}>
+                {shouldShowNullValues ? '--' : (
+                  analysisSessions.length > 0 
+                    ? `+${analysisSessions.filter(s => 
+                        new Date(s.timestamp).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
+                      ).length} this week`
+                    : '+8%'
+                )}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#8b5cf6' }}>
+          <div className="dashboard-stat-icon" style={{ backgroundColor: '#8b5cf6' }}>
             <Users className="icon" />
           </div>
           <div className="stat-content">
-            <h3>{stats?.collaborations || 0}</h3>
+            <h3 className={shouldShowNullValues ? 'loading-value' : ''}>
+              {shouldShowNullValues ? '--' : (stats?.collaborations || 0)}
+            </h3>
             <p>Active Collaborations</p>
             <div className="stat-trend positive">
               <ArrowUpRight className="trend-icon" />
-              <span>+3</span>
+              <span className={shouldShowNullValues ? 'loading-value' : ''}>
+                {shouldShowNullValues ? '--' : '+3'}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#f59e0b' }}>
+          <div className="dashboard-stat-icon" style={{ backgroundColor: '#f59e0b' }}>
             <Activity className="icon" />
           </div>
           <div className="stat-content">
-            <h3>{stats?.recentActivity || 0}</h3>
+            <h3 className={shouldShowNullValues ? 'loading-value' : ''}>
+              {shouldShowNullValues ? '--' : (stats?.recentActivity || 0)}
+            </h3>
             <p>Recent Activities</p>
             <div className="stat-trend negative">
               <ArrowDownRight className="trend-icon" />
-              <span>-2%</span>
+              <span className={shouldShowNullValues ? 'loading-value' : ''}>
+                {shouldShowNullValues ? '--' : '-2%'}
+              </span>
             </div>
           </div>
         </div>
@@ -443,16 +599,38 @@ const DashboardPage: React.FC = () => {
             <div className="card-content">
               <div className="actions-grid">
                 {quickActions.map((action) => (
-                  <Link key={action.id} to={action.href} className="action-item">
-                    <div className="action-icon" style={{ backgroundColor: action.color }}>
-                      <action.icon className="icon" />
-                    </div>
-                    <div className="action-content">
-                      <h3>{action.title}</h3>
-                      <p>{action.description}</p>
-                    </div>
-                    <ArrowUpRight className="action-arrow" />
-                  </Link>
+                  action.id === 'analyze' ? (
+                    <button 
+                      key={action.id} 
+                      className="action-item"
+                      onClick={handleAnalyzeClick}
+                      disabled={isAnalyzing}
+                    >
+                      <div className="action-icon" style={{ backgroundColor: action.color }}>
+                        {isAnalyzing ? (
+                          <RefreshCw className="icon spinning" />
+                        ) : (
+                          <action.icon className="icon" />
+                        )}
+                      </div>
+                      <div className="action-content">
+                        <h3>{isAnalyzing ? 'Creating Analysis...' : action.title}</h3>
+                        <p>{action.description}</p>
+                      </div>
+                      <ArrowUpRight className="action-arrow" />
+                    </button>
+                  ) : (
+                    <Link key={action.id} to={action.href} className="action-item">
+                      <div className="action-icon" style={{ backgroundColor: action.color }}>
+                        <action.icon className="icon" />
+                      </div>
+                      <div className="action-content">
+                        <h3>{action.title}</h3>
+                        <p>{action.description}</p>
+                      </div>
+                      <ArrowUpRight className="action-arrow" />
+                    </Link>
+                  )
                 ))}
               </div>
             </div>
@@ -580,35 +758,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* AI Assistant */}
-          <div className="card ai-assistant-card">
-            <div className="card-header">
-              <h2>
-                <Zap className="card-icon" />
-                AI Assistant
-              </h2>
-            </div>
-            <div className="card-content">
-              <div className="ai-welcome">
-                <h3>What would you like ClarifAI to analyze today?</h3>
-                <p>Ask me anything about your data or get insights on your datasets</p>
-                <div className="ai-input-container">
-                  <input
-                    type="text"
-                    className="ai-input"
-                    placeholder="What insights are you curious about today?"
-                  />
-                  <button className="ai-send-btn">
-                    <ArrowUpRight className="btn-icon" />
-                  </button>
-                </div>
-                <div className="ai-suggestions">
-                  <button className="suggestion-chip">Show data quality issues</button>
-                  <button className="suggestion-chip">Find trends in sales data</button>
-                  <button className="suggestion-chip">Generate insights report</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AIChat datasets={datasets} />
         </div>
       </div>
     </div>

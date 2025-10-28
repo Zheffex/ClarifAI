@@ -1,158 +1,127 @@
-import React, { useState } from 'react';
-import './AuthPages.css';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Lock } from 'lucide-react';
+import { authService } from "../../services/authService";
+import "./AuthPages.css";
 
-const ResetPassword: React.FC = () => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
-  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+const NewPasswordPage: React.FC = () => {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Get email from localStorage
+  const email = localStorage.getItem('email');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setValidationError('');
-    setSuccessMessage('');
+    setError("");
 
-    if (password.length < 8) {
-      setValidationError('Password must be at least 8 characters long.');
+    if (!email) {
+      setError("Email not found. Please go back and request a new password reset.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setValidationError('Passwords do not match.');
+      setError("Passwords do not match");
       return;
     }
 
-    // TODO: Replace with backend reset password API
-    setSuccessMessage('Password has been reset successfully!');
-  };
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
 
-  const handleFieldBlur = (fieldName: string) => {
-    setTouchedFields(prev => new Set(prev).add(fieldName));
-  };
+    setIsSubmitting(true);
 
-  const passwordsMatch = password && confirmPassword && password === confirmPassword;
+    try {
+      // Call backend endpoint to reset password with email
+      await authService.resetPassword(email, password); 
+
+      // Clean up localStorage
+      localStorage.removeItem('email');
+      localStorage.removeItem('otpFlow');
+
+      // Show success alert
+      alert("✅ Password reset successfully!");
+
+      // Navigate to login page after success
+      navigate("/login");
+    } catch (error: any) {
+      setError(error.message || "Failed to reset password");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="reset-container">
-      <div className="reset-left">
-        <div className="logo">ClarifAI</div>
-        <div className="reset-text">
+    <div className="forgot-container">
+      <div className="forgot-card">
+        <img src="logo192.png" alt="ClarifAI logo" className="forgot-logo" />
+        <h2 className="forgot-title">Create New Password</h2>
+        <p className="forgot-subtitle">
+          Enter your new password below.
+        </p>
 
-            <title>Forgot Password</title>
-          <h2>
-            Clarify your data.<br />Amplify your insight.
-          </h2>
-          <p>
-            Join the ClarifAI data community and unlock AI-driven analytics and collaboration tools.
-            It only takes a minute to start transforming your data with AI.
-          </p>
-        </div>
-      </div>
+        <form onSubmit={handleSubmit} className="forgot-form">
+          {error && (
+            <div style={{ 
+              background: "#fef2f2", 
+              border: "1px solid #fecaca", 
+              color: "#dc2626", 
+              padding: "0.75rem", 
+              borderRadius: "8px",
+              fontSize: "0.875rem"
+            }}>
+              {error}
+            </div>
+          )}
 
-      <div className="reset-right">
-        <form className="reset-box" onSubmit={handleSubmit}>
-          <h2>Create New Password</h2>
-          <p className="subtitle">
-            Enter your new password below. Make sure it’s strong and easy for you to remember.
-          </p>
-
-          <div className="form-group">
-            <label>New Password</label>
+          <div className="input-wrapper">
+            <Lock className="label-icon" />
             <input
               type="password"
-              placeholder="Enter your new password"
+              placeholder="Enter New Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => handleFieldBlur('password')}
-              onFocus={() => setShowPasswordRequirements(true)}
-              className={`form-input ${
-                touchedFields.has('password') && validationError.includes('Password must be at least') ? 'error' : ''
-              } ${
-                touchedFields.has('password') && !validationError && password.length >= 8 ? 'success' : ''
-              }`}
+              required
+              disabled={isSubmitting}
             />
+          </div>
 
-            {confirmPassword && touchedFields.has('confirmPassword') && (
-              <>
-                {!passwordsMatch && (
-                  <div className="field-error">Passwords do not match</div>
-                )}
-                {passwordsMatch && (
-                  <div className="field-success">Passwords match!</div>
-                )}
-              </>
-            )}
-
-            <div className="form-group">
-            <label>Confirm Password</label>
+          <div className="input-wrapper">
+            <Lock className="label-icon" />
             <input
               type="password"
-              placeholder="Re-enter your new password"
+              placeholder="Confirm New Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              onBlur={() => handleFieldBlur('confirmPassword')}
-              className={`form-input ${
-                touchedFields.has('confirmPassword') && !passwordsMatch && confirmPassword ? 'error' : ''
-              } ${
-                touchedFields.has('confirmPassword') && passwordsMatch ? 'success' : ''
-              }`}
+              required
+              disabled={isSubmitting}
             />
-
-            {confirmPassword && touchedFields.has('confirmPassword') && (
-              <>
-                {!passwordsMatch && (
-                  <div className="field-error">Passwords do not match</div>
-                )}
-                {passwordsMatch && (
-                  <div className="field-success">Passwords match!</div>
-                )}
-              </>
-            )}       
-
-            {/* ✅ Separate Password Requirement Styles */}
-            {showPasswordRequirements && (
-              <div className="reset-password-requirements">
-                <p className="reset-req-title">Password must contain:</p>
-                <ul className="reset-req-list">
-                  <li className={password.length >= 8 ? 'met' : 'unmet'}>
-                    At least 8 characters
-                  </li>
-                  <li className={/[a-z]/.test(password) ? 'met' : 'unmet'}>
-                    One lowercase letter
-                  </li>
-                  <li className={/[A-Z]/.test(password) ? 'met' : 'unmet'}>
-                    One uppercase letter
-                  </li>
-                  <li className={/\d/.test(password) ? 'met' : 'unmet'}>
-                    One number
-                  </li>
-                </ul>
-              </div>
-            )}
           </div>
 
-          
-
-            
-          </div>
-
-          {validationError && <p className="error">{validationError}</p>}
-          {successMessage && <p className="success">{successMessage}</p>}
-
-          <button type="submit" className="reset-btn">Reset Password</button>
-          <button
-            type="button"
-            className="back-btn"
-            onClick={() => window.history.back()}
-          >
-            Go Back
+          <button type="submit" className="forgot-button" disabled={isSubmitting}>
+            {isSubmitting ? "Resetting..." : "Reset Password"}
           </button>
         </form>
+
+        <p className="forgot-footer">
+          Remember your password?{" "}
+          <Link to="/login" className="forgot-register">
+            Sign In
+          </Link>
+        </p>
+
+        <Link to="/login" className="forgot-back">
+          <img src="return.png" alt="Back" className="back-icon" />
+          Back to Login
+        </Link>
       </div>
     </div>
   );
 };
 
-export default ResetPassword;
+export default NewPasswordPage;
+

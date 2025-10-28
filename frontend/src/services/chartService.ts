@@ -24,9 +24,19 @@ export interface ChartOptions {
     legend?: {
       display: boolean;
       position?: 'top' | 'bottom' | 'left' | 'right';
+      labels?: {
+        generateLabels?: (chart: any) => any[];
+        padding?: number;
+        font?: {
+          size?: number;
+        };
+      };
     };
     tooltip?: {
-      enabled: boolean;
+      enabled?: boolean;
+      callbacks?: {
+        label?: (context: any) => string;
+      };
     };
   };
   scales?: {
@@ -212,9 +222,18 @@ export class ChartService {
     const groupedData = this.groupAndAggregate(data, xField, yField, aggregation);
     const labels = Object.keys(groupedData).sort();
     const values = labels.map(label => groupedData[label]);
+    
+    // Calculate percentages
+    const total = values.reduce((sum, val) => sum + val, 0);
+    const percentages = values.map(val => ((val / total) * 100).toFixed(1));
+    
+    // Add percentages to labels
+    const labelsWithPercentages = labels.map((label, index) => 
+      `${label} (${percentages[index]}%)`
+    );
 
     const chartData: ChartData = {
-      labels,
+      labels: labelsWithPercentages,
       datasets: [{
         label: yField ? `${aggregation}(${yField})` : 'Count',
         data: values,
@@ -235,6 +254,17 @@ export class ChartService {
         legend: {
           display: true,
           position: 'right'
+        },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: (context: any) => {
+              const originalLabel = labels[context.dataIndex];
+              const value = values[context.dataIndex];
+              const percentage = percentages[context.dataIndex];
+              return `${originalLabel}: ${value} (${percentage}%)`;
+            }
+          }
         }
       }
     };

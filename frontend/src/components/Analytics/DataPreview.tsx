@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dataset } from '../../types/api';
+import apiClient from '../../services/apiClient';
+import { Hash, Calendar, FileText, BarChart3, DollarSign, Database, CheckCircle, XCircle, Clock } from 'lucide-react';
 import './DataPreview.css';
 
 interface DataPreviewProps {
@@ -41,40 +43,13 @@ const DataPreview: React.FC<DataPreviewProps> = ({
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
       const offset = (currentPage - 1) * pageSize;
       
-      const response = await fetch(
-        `/api/datasets/${dataset._id}/preview?limit=${pageSize}&offset=${offset}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await apiClient.get(
+        `/datasets/${dataset._id}/preview?limit=${pageSize}&offset=${offset}`
       );
 
-      if (!response.ok) {
-        // Check if response is HTML (error page)
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
-        }
-        throw new Error(`Failed to load preview data: ${response.status} ${response.statusText}`);
-      }
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        if (text.includes('<!DOCTYPE')) {
-          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
-        }
-        throw new Error('Server returned non-JSON response');
-      }
-
-      const result = await response.json();
-      setPreviewData(result.data);
+      setPreviewData(response.data.data);
     } catch (err) {
       console.error('DataPreview error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -100,16 +75,16 @@ const DataPreview: React.FC<DataPreviewProps> = ({
 
   const getFieldIcon = (type: string) => {
     switch (type) {
-      case 'number': return '🔢';
-      case 'date': return '📅';
-      case 'boolean': return '✓';
-      case 'array': return '📋';
-      case 'object': return '📦';
-      default: return '📝';
+      case 'number': return <BarChart3 size={16} />;
+      case 'date': return <Calendar size={16} />;
+      case 'boolean': return <CheckCircle size={16} />;
+      case 'array': return <Database size={16} />;
+      case 'object': return <FileText size={16} />;
+      default: return <FileText size={16} />;
     }
   };
 
-  const formatCellValue = (value: any, type: string) => {
+  const formatCellValue = (value: any, type: string, showTime: boolean = false) => {
     if (value == null) {
       return <span className="null-value">null</span>;
     }
@@ -117,14 +92,21 @@ const DataPreview: React.FC<DataPreviewProps> = ({
     switch (type) {
       case 'date':
         try {
-          return new Date(value).toLocaleString();
+          const date = new Date(value);
+          if (showTime) {
+            // Return time only
+            return date.toLocaleTimeString();
+          } else {
+            // Return date only
+            return date.toLocaleDateString();
+          }
         } catch {
           return String(value);
         }
       case 'boolean':
         return (
           <span className={`boolean-value ${value ? 'true' : 'false'}`}>
-            {value ? '✓' : '✗'}
+            {value ? <CheckCircle size={14} /> : <XCircle size={14} />}
           </span>
         );
       case 'number':
@@ -185,7 +167,7 @@ const DataPreview: React.FC<DataPreviewProps> = ({
     <div className="data-preview">
       <div className="data-preview-header">
         <div className="preview-info">
-          <h3>Data Preview</h3>
+          <h3>{dataset.name}</h3>
           <p>
             Showing {previewData.pagination.offset + 1} - {Math.min(
               previewData.pagination.offset + pageSize,
@@ -243,16 +225,47 @@ const DataPreview: React.FC<DataPreviewProps> = ({
             <thead>
               <tr>
                 <th className="row-number-header">#</th>
-                {previewData.columns.map(column => {
+                {previewData.columns.flatMap(column => {
                   const fieldType = getFieldType(column);
+                  
+                  if (fieldType === 'date') {
+                    // Render separate date and time headers
+                    return [
+                      <th key={column} className="column-header">
+                        <div className="column-header-content">
+                          <div className="column-header-main">
+                            <span className="column-icon">
+                              {getFieldIcon(fieldType)}
+                            </span>
+                            <span className="column-name">{column}</span>
+                            <span className="column-type">{fieldType}</span>
+                          </div>
+                        </div>
+                      </th>,
+                      <th key={`${column}-time`} className="column-header">
+                        <div className="column-header-content">
+                          <div className="column-header-main">
+                            <span className="column-icon">
+                              <Clock size={16} />
+                            </span>
+                            <span className="column-name">Time</span>
+                            <span className="column-type">TIME</span>
+                          </div>
+                        </div>
+                      </th>
+                    ];
+                  }
+                  
                   return (
                     <th key={column} className="column-header">
                       <div className="column-header-content">
-                        <span className="column-icon">
-                          {getFieldIcon(fieldType)}
-                        </span>
-                        <span className="column-name">{column}</span>
-                        <span className="column-type">{fieldType}</span>
+                        <div className="column-header-main">
+                          <span className="column-icon">
+                            {getFieldIcon(fieldType)}
+                          </span>
+                          <span className="column-name">{column}</span>
+                          <span className="column-type">{fieldType}</span>
+                        </div>
                       </div>
                     </th>
                   );
@@ -265,12 +278,26 @@ const DataPreview: React.FC<DataPreviewProps> = ({
                   <td className="row-number">
                     {previewData.pagination.offset + index + 1}
                   </td>
-                  {previewData.columns.map(column => {
+                  {previewData.columns.flatMap(column => {
                     const fieldType = getFieldType(column);
                     const value = row[column];
+                    const isDateColumn = fieldType === 'date';
+                    
+                    if (isDateColumn) {
+                      // Render both date and time cells for date columns
+                      return [
+                        <td key={column} className={`cell cell-${fieldType}`}>
+                          {formatCellValue(value, fieldType, false)}
+                        </td>,
+                        <td key={`${column}-time`} className="cell cell-time">
+                          {formatCellValue(value, fieldType, true)}
+                        </td>
+                      ];
+                    }
+                    
                     return (
                       <td key={column} className={`cell cell-${fieldType}`}>
-                        {formatCellValue(value, fieldType)}
+                        {formatCellValue(value, fieldType, false)}
                       </td>
                     );
                   })}

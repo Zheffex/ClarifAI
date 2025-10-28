@@ -34,7 +34,7 @@ export interface Dataset {
     delimiter?: string;
     headers?: string[];
   };
-  processingStatus: 'pending' | 'processing' | 'ready' | 'error';
+  processingStatus: 'pending' | 'processing' | 'ready' | 'failed' | 'error';
   processingError?: string;
   tags: string[];
   isPublic: boolean;
@@ -220,6 +220,7 @@ export interface NotificationContextType {
 }
 
 export interface Notification {
+  isRead: boolean;
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;

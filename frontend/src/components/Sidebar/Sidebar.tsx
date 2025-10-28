@@ -1,6 +1,5 @@
-// Sidebar.tsx
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Folder,
@@ -9,70 +8,195 @@ import {
   Users,
   LogOut,
   Settings2,
+  ChevronRight,
+  List,
+  ListCollapse
 } from "lucide-react";
 import "./Sidebar.css";
 import { authService } from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout even if API call fails
+      navigate('/login');
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const navigationItems = [
+    {
+      to: "/dashboard",
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      description: "Overview and insights"
+    },
+    {
+      to: "/datasets",
+      icon: Folder,
+      label: "Datasets",
+      description: "Manage your data"
+    },
+    {
+      to: "/analytics",
+      icon: BarChart2,
+      label: "Analytics",
+      description: "AI-powered analysis"
+    },
+    {
+      to: "/collaboration",
+      icon: Users,
+      label: "Collaboration",
+      description: "Team workspace"
+    },
+    {
+      to: "/profile",
+      icon: User,
+      label: "Profile",
+      description: "Account settings"
+    }
+  ];
+
   return (
-    <aside className="sb-root">
-      <div className="sb-top">
-        <div className="sb-brand">ClarifAI</div>
-      </div>
+    <>
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="mobile-overlay"
+          onClick={toggleMobileMenu}
+        />
+      )}
 
-      <nav className="sb-nav">
-        <NavLink to="/dashboard" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
-          <div className="sb-icon"><LayoutDashboard size={18} /></div>
-          <span>Dashboard</span>
-        </NavLink>
+      {/* Sidebar */}
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Header */}
+        <div className="sidebar-header">
+          <div className="brand-section">
+            <div className="brand-icon">
+              <img src="/logo192.png" alt="ClarifAI Logo" className="brand-logo" />
+            </div>
+            {!isCollapsed && (
+              <div className="brand-text">
+                <h1>ClarifAI</h1>
+              </div>
+            )}
+          </div>
+          
+          {/* Toggle Button */}
+          <button 
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <List className="toggle-icon" /> : <ListCollapse className="toggle-icon" />}
+          </button>
+        </div>
 
-        <NavLink to="/datasets" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
-          <div className="sb-icon"><Folder size={18} /></div>
-          <span>Datasets</span>
-        </NavLink>
+        {/* User Info */}
+        {!isCollapsed && (
+          <div className="user-section">
+            <div className="user-avatar">
+              <User className="avatar-icon" />
+            </div>
+            <div className="user-info">
+              <h3 className="user-name">{user?.firstName || 'User'} {user?.lastName || ''}</h3>
+              <span className="user-role">{user?.role || 'Analyst'}</span>
+            </div>
+          </div>
+        )}
 
-        <NavLink to="/profile" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
-          <div className="sb-icon"><User size={18} /></div>
-          <span>Profile</span>
-        </NavLink>
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => {
+            const isActive = location.pathname === item.to;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <div className="nav-icon">
+                  <item.icon className="icon" />
+                </div>
+                {!isCollapsed && (
+                  <div className="nav-content">
+                    <span className="nav-label">{item.label}</span>
+                    <span className="nav-description">{item.description}</span>
+                  </div>
+                )}
+                {isActive && <div className="nav-indicator" />}
+              </NavLink>
+            );
+          })}
+        </nav>
 
-        <NavLink to="/analytics" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
-          <div className="sb-icon"><BarChart2 size={18} /></div>
-          <span>AI analytics</span>
-        </NavLink>
+        {/* Settings Section */}
+        <div className="sidebar-settings">
+          <NavLink
+            to="/settings"
+            className={`nav-item settings-item ${location.pathname === '/settings' ? 'active' : ''}`}
+            title={isCollapsed ? "Settings" : undefined}
+          >
+            <div className="nav-icon">
+              <Settings2 className="icon" />
+            </div>
+            {!isCollapsed && (
+              <div className="nav-content">
+                <span className="nav-label">Settings</span>
+                <span className="nav-description">Preferences</span>
+              </div>
+            )}
+          </NavLink>
+        </div>
 
-        <NavLink to="/collaboration" className={({ isActive }) => `sb-link ${isActive ? "active" : ""}`}>
-          <div className="sb-icon"><Users size={18} /></div>
-          <span>Collaboration</span>
-        </NavLink>
-      </nav>
+        {/* Footer */}
+        <div className="sidebar-footer">
+          <button
+            onClick={handleLogout}
+            className="logout-btn"
+            title={isCollapsed ? "Logout" : undefined}
+          >
+            <div className="nav-icon">
+              <LogOut className="icon" />
+            </div>
+            {!isCollapsed && (
+              <div className="nav-content">
+                <span className="nav-label">Logout</span>
+                <span className="nav-description">Sign out</span>
+              </div>
+            )}
+          </button>
+        </div>
+      </aside>
 
-      <div className="sb-middle">
-        <hr className="sb-dividers" />
-        <NavLink to="/settings" className="sb-link settings">
-          <div className="sb-icon"><Settings2 size={18} /></div>
-          <span   >Settings</span>
-        </NavLink>
-      </div>
-
-      <div className="sb-bottom">
-        <hr className="sb-divider" />
-
-        <button
-          onClick={async () => {
-            await authService.logout();
-            window.location.href = '/login'; // Or use navigate('/login')
-          }}
-          className="sb-link logout"
-          style={{  cursor: 'pointer' }} // keeps style similar to NavLink
-        >
-          <div className="sb-icon"><LogOut size={18} /> </div>
-          <span>Log out</span>
-        </button>
-        
-    </div>
-
-    </aside>
+      {/* Mobile Menu Button */}
+      <button 
+        className="mobile-menu-btn"
+        onClick={toggleMobileMenu}
+        title="Open menu"
+      >
+        <ChevronRight className="menu-icon" />
+      </button>
+    </>
   );
 };
 

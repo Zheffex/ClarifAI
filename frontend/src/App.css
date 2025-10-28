@@ -36,3 +36,60 @@
     transform: rotate(360deg);
   }
 }
+
+/* App Layout Styles */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.content-wrapper {
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 12px;
+  }
+}
+
+/* Admin Layout Styles */
+.admin-main-content {
+  margin-left: 280px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout .admin-sidebar.collapsed ~ .admin-main-content {
+  margin-left: 80px;
+}
+
+.admin-content-wrapper {
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+}
+
+/* Responsive Admin Layout */
+@media (max-width: 768px) {
+  .admin-main-content {
+    margin-left: 0;
+  }
+
+  .admin-content-wrapper {
+    padding: 16px;
+  }
+}

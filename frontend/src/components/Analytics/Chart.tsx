@@ -45,6 +45,8 @@ interface ChartProps {
   onChartClick?: (event: any, elements: any[]) => void;
   showControls?: boolean;
   allowExport?: boolean;
+  isFullscreen?: boolean;
+  onFullscreenToggle?: () => void;
 }
 
 const Chart: React.FC<ChartProps> = ({
@@ -54,10 +56,11 @@ const Chart: React.FC<ChartProps> = ({
   className = '',
   onChartClick,
   showControls = true,
-  allowExport = true
+  allowExport = true,
+  isFullscreen = false,
+  onFullscreenToggle
 }) => {
   const chartRef = useRef<ChartJS>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
   const [showLegend, setShowLegend] = useState(config.options.plugins?.legend?.display ?? true);
 
@@ -81,7 +84,9 @@ const Chart: React.FC<ChartProps> = ({
   };
 
   const handleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+    if (onFullscreenToggle) {
+      onFullscreenToggle();
+    }
   };
 
   const updatedConfig = {
@@ -184,71 +189,18 @@ const Chart: React.FC<ChartProps> = ({
 
   return (
     <div className={`chart-container ${className} ${isFullscreen ? 'fullscreen' : ''}`}>
-      {showControls && (
-        <div className="chart-header">
-          <div className="chart-info">
-            {config.title && <h3 className="chart-title">{config.title}</h3>}
-            {config.description && <p className="chart-description">{config.description}</p>}
-          </div>
-          
-          <div className="chart-controls">
-            <div className="chart-toggles">
-              <button
-                className={`toggle-button ${showLegend ? 'active' : ''}`}
-                onClick={() => setShowLegend(!showLegend)}
-                title="Toggle Legend"
-              >
-                Legend
-              </button>
-              <button
-                className={`toggle-button ${showTooltip ? 'active' : ''}`}
-                onClick={() => setShowTooltip(!showTooltip)}
-                title="Toggle Tooltips"
-              >
-                Tooltips
-              </button>
-            </div>
-            
-            {allowExport && (
-              <div className="export-controls">
-                <div className="dropdown">
-                  <button className="dropdown-toggle" title="Export Chart">
-                    Export ↓
-                  </button>
-                  <div className="dropdown-menu">
-                    <button onClick={() => handleExport('png')}>PNG</button>
-                    <button onClick={() => handleExport('jpeg')}>JPEG</button>
-                    <button onClick={() => handleExport('pdf')} disabled>
-                      PDF (Coming Soon)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <button
-              className="fullscreen-button"
-              onClick={handleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            >
-              {isFullscreen ? '⤋' : '⤢'}
-            </button>
-          </div>
-        </div>
-      )}
-      
-      <div className="chart-content" style={{ height: `${height}px` }}>
+      <div className="chart-content" style={{ minHeight: `${height}px`, height: '100%' }}>
         {renderChart()}
       </div>
       
       {isFullscreen && (
-        <div className="fullscreen-overlay" onClick={() => setIsFullscreen(false)}>
+        <div className="fullscreen-overlay" onClick={() => onFullscreenToggle && onFullscreenToggle()}>
           <div className="fullscreen-chart" onClick={(e) => e.stopPropagation()}>
             <div className="fullscreen-header">
               <h2>{config.title}</h2>
               <button
                 className="close-fullscreen"
-                onClick={() => setIsFullscreen(false)}
+                onClick={() => onFullscreenToggle && onFullscreenToggle()}
               >
                 ✕
               </button>

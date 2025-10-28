@@ -90,9 +90,8 @@ const ProfilePage: React.FC = () => {
   const validatePasswordForm = (): boolean => {
     const errors: typeof passwordErrors = {};
 
-    if (!passwordForm.currentPassword) {
-      errors.current = "Current password is required";
-    }
+    // Skip current password validation since it's view-only
+    // The backend will handle current password verification
 
     if (!passwordForm.newPassword) {
       errors.new = "New password is required";
@@ -104,10 +103,6 @@ const ProfilePage: React.FC = () => {
       errors.confirm = "Please confirm your new password";
     } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       errors.confirm = "Passwords do not match";
-    }
-
-    if (passwordForm.currentPassword === passwordForm.newPassword) {
-      errors.new = "New password must be different from current password";
     }
 
     setPasswordErrors(errors);
@@ -141,7 +136,7 @@ const ProfilePage: React.FC = () => {
     setIsSaving(true);
     try {
       await authService.changePassword({
-        currentPassword: passwordForm.currentPassword,
+        currentPassword: "", // Will be handled by backend authentication
         newPassword: passwordForm.newPassword,
       });
       
@@ -238,11 +233,10 @@ const ProfilePage: React.FC = () => {
                 <h2>{user.firstName} {user.lastName}</h2>
                 <p className="user-role">
                   <Shield className="role-icon" />
-                  {user.role}
+                  <span className="role-badge">{user.role}</span>
                 </p>
                 <p className="user-email">
-                  <Mail className="email-icon" />
-                  {user.email}
+                  <span className="email-text">{user.email}</span>
                 </p>
               </div>
             </div>
@@ -262,10 +256,10 @@ const ProfilePage: React.FC = () => {
           <div className="profile-section">
             <h3>Personal Information</h3>
             <div className="form-grid">
-              <div className="form-group">
+              <div className="profile-form-group">
                 <label htmlFor="firstName">First Name</label>
-                <div className="input-wrapper">
-                  <User className="input-icon" />
+                <div className="profile-input-wrapper">
+                  <User className="profile-input-icon" />
                   <input
                     id="firstName"
                     name="firstName"
@@ -273,16 +267,16 @@ const ProfilePage: React.FC = () => {
                     value={profileForm.firstName}
                     onChange={handleProfileChange}
                     disabled={!isEditingProfile}
-                    className="form-input"
+                    className="profile-form-input"
                     placeholder="Enter your first name"
                   />
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className="profile-form-group">
                 <label htmlFor="lastName">Last Name</label>
-                <div className="input-wrapper">
-                  <User className="input-icon" />
+                <div className="profile-input-wrapper">
+                  <User className="profile-input-icon" />
                   <input
                     id="lastName"
                     name="lastName"
@@ -290,47 +284,40 @@ const ProfilePage: React.FC = () => {
                     value={profileForm.lastName}
                     onChange={handleProfileChange}
                     disabled={!isEditingProfile}
-                    className="form-input"
+                    className="profile-form-input"
                     placeholder="Enter your last name"
                   />
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className="profile-form-group">
                 <label htmlFor="email">Email Address</label>
-                <div className="input-wrapper">
-                  <Mail className="input-icon" />
+                <div className="profile-input-wrapper">
+                  <Mail className="profile-input-icon" />
                   <input
                     id="email"
                     name="email"
                     type="email"
                     value={profileForm.email}
                     disabled
-                    className="form-input disabled"
+                    className="profile-form-input disabled"
                     placeholder="Enter your email"
                   />
                 </div>
-                <small className="form-note">Email cannot be changed</small>
+                <small className="profile-form-note">Email cannot be changed</small>
               </div>
 
-              <div className="form-group">
+              <div className="profile-form-group">
                 <label>Account Status</label>
                 <div className="status-badge">
                   <CheckCircle className="status-icon" />
-                  <span>{user.isEmailVerified ? 'Verified' : 'Unverified'}</span>
+                  <span>{user.isEmailVerified !== false ? 'Verified' : 'Unverified'}</span>
                 </div>
               </div>
             </div>
 
             {isEditingProfile && (
               <div className="form-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={handleCancelEdit}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </button>
                 <button
                   className="btn btn-primary"
                   onClick={handleSaveProfile}
@@ -349,7 +336,7 @@ const ProfilePage: React.FC = () => {
           <div className="card-header">
             <h3>Security Settings</h3>
             <button
-              className={`btn btn-outline ${isChangingPassword ? 'active' : ''}`}
+              className={isChangingPassword ? 'btn btn-secondary' : 'btn btn-outline'}
               onClick={() => setIsChangingPassword(!isChangingPassword)}
               disabled={isSaving}
             >
@@ -361,93 +348,85 @@ const ProfilePage: React.FC = () => {
           {isChangingPassword && (
             <div className="password-section">
               <div className="form-grid">
-                <div className="form-group">
+                <div className="profile-form-group">
                   <label htmlFor="currentPassword">Current Password</label>
-                  <div className="input-wrapper">
-                    <Lock className="input-icon" />
+                  <div className="profile-input-wrapper">
+                    <Lock className="profile-input-icon" />
                     <input
                       id="currentPassword"
                       name="currentPassword"
-                      type={showPasswords.current ? "text" : "password"}
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordChange}
-                      className={`form-input ${passwordErrors.current ? 'error' : ''}`}
-                      placeholder="Enter current password"
+                      type="password"
+                      value="••••••••"
+                      disabled
+                      className="profile-form-input disabled view-only-password"
+                      placeholder="Current password"
+                      readOnly
                     />
                     <button
                       type="button"
-                      className="password-toggle"
-                      onClick={() => togglePasswordVisibility('current')}
+                      className="profile-password-toggle disabled"
+                      disabled
                     >
-                      {showPasswords.current ? <EyeOff /> : <Eye />}
+                      <EyeOff />
                     </button>
                   </div>
-                  {passwordErrors.current && (
-                    <span className="error-message">{passwordErrors.current}</span>
-                  )}
+                  <small className="profile-form-note">Current password is hidden for security</small>
                 </div>
 
-                <div className="form-group">
+                <div className="profile-form-group">
                   <label htmlFor="newPassword">New Password</label>
-                  <div className="input-wrapper">
-                    <Lock className="input-icon" />
+                  <div className="profile-input-wrapper">
+                    <Lock className="profile-input-icon" />
                     <input
                       id="newPassword"
                       name="newPassword"
                       type={showPasswords.new ? "text" : "password"}
                       value={passwordForm.newPassword}
                       onChange={handlePasswordChange}
-                      className={`form-input ${passwordErrors.new ? 'error' : ''}`}
+                      className={`profile-form-input ${passwordErrors.new ? 'error' : ''}`}
                       placeholder="Enter new password"
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className="profile-password-toggle"
                       onClick={() => togglePasswordVisibility('new')}
                     >
                       {showPasswords.new ? <EyeOff /> : <Eye />}
                     </button>
                   </div>
                   {passwordErrors.new && (
-                    <span className="error-message">{passwordErrors.new}</span>
+                    <span className="profile-error-message">{passwordErrors.new}</span>
                   )}
                 </div>
 
-                <div className="form-group">
+                <div className="profile-form-group">
                   <label htmlFor="confirmPassword">Confirm New Password</label>
-                  <div className="input-wrapper">
-                    <Lock className="input-icon" />
+                  <div className="profile-input-wrapper">
+                    <Lock className="profile-input-icon" />
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
                       type={showPasswords.confirm ? "text" : "password"}
                       value={passwordForm.confirmPassword}
                       onChange={handlePasswordChange}
-                      className={`form-input ${passwordErrors.confirm ? 'error' : ''}`}
+                      className={`profile-form-input ${passwordErrors.confirm ? 'error' : ''}`}
                       placeholder="Confirm new password"
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className="profile-password-toggle"
                       onClick={() => togglePasswordVisibility('confirm')}
                     >
                       {showPasswords.confirm ? <EyeOff /> : <Eye />}
                     </button>
                   </div>
                   {passwordErrors.confirm && (
-                    <span className="error-message">{passwordErrors.confirm}</span>
+                    <span className="profile-error-message">{passwordErrors.confirm}</span>
                   )}
                 </div>
               </div>
 
               <div className="form-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={handleCancelPasswordChange}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </button>
                 <button
                   className="btn btn-primary"
                   onClick={handleChangePassword}

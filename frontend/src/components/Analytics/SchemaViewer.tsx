@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Dataset } from '../../types/api';
+import apiClient from '../../services/apiClient';
+import { 
+  Hash, 
+  Calendar, 
+  CheckCircle, 
+  Database, 
+  FileText, 
+  Type,
+  Key,
+  AlertCircle
+} from 'lucide-react';
 import './SchemaViewer.css';
 
 interface SchemaViewerProps {
@@ -55,36 +66,8 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`/api/datasets/${dataset._id}/schema`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        // Check if response is HTML (error page)
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
-        }
-        throw new Error(`Failed to load schema data: ${response.status} ${response.statusText}`);
-      }
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        if (text.includes('<!DOCTYPE')) {
-          throw new Error('Server returned HTML instead of JSON. The API endpoint may not exist or there\'s a server error.');
-        }
-        throw new Error('Server returned non-JSON response');
-      }
-
-      const result = await response.json();
-      setSchemaData(result.data);
+      const response = await apiClient.get(`/datasets/${dataset._id}/schema`);
+      setSchemaData(response.data.data);
     } catch (err) {
       console.error('SchemaViewer error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load schema');
@@ -95,12 +78,12 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
 
   const getFieldTypeIcon = (type: string) => {
     switch (type) {
-      case 'number': return '🔢';
-      case 'date': return '📅';
-      case 'boolean': return '✓';
-      case 'array': return '📋';
-      case 'object': return '📦';
-      default: return '📝';
+      case 'number': return <Hash size={20} />;
+      case 'date': return <Calendar size={20} />;
+      case 'boolean': return <CheckCircle size={20} />;
+      case 'array': return <Database size={20} />;
+      case 'object': return <FileText size={20} />;
+      default: return <Type size={20} />;
     }
   };
 
@@ -130,7 +113,7 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
           <h4>
             {getFieldTypeIcon(field.type)} {field.name}
           </h4>
-          <span className="field-type-badge\">{field.type}</span>
+          <span className="field-type-badge">{field.type}</span>
         </div>
         
         <div className="field-properties">
@@ -152,7 +135,7 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
             <div className="property">
               <label>Confidence:</label>
               <span 
-                className="confidence-badge\"
+                className="confidence-badge"
                 style={{ backgroundColor: getConfidenceColor(field.confidence) }}
               >
                 {getConfidenceLabel(field.confidence)} ({Math.round(field.confidence * 100)}%)
@@ -162,14 +145,14 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
             {field.distinctValues && (
               <div className="property">
                 <label>Distinct Values:</label>
-                <span className="property-value\">{field.distinctValues.toLocaleString()}</span>
+                <span className="property-value">{field.distinctValues.toLocaleString()}</span>
               </div>
             )}
             
             {field.pattern && (
               <div className="property">
                 <label>Pattern:</label>
-                <span className="property-value pattern\">{field.pattern}</span>
+                <span className="property-value pattern">{field.pattern}</span>
               </div>
             )}
             
@@ -178,21 +161,21 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
                 {field.minValue !== undefined && (
                   <div className="property">
                     <label>Min Value:</label>
-                    <span className="property-value\">{field.minValue}</span>
+                    <span className="property-value">{field.minValue}</span>
                   </div>
                 )}
                 
                 {field.maxValue !== undefined && (
                   <div className="property">
                     <label>Max Value:</label>
-                    <span className="property-value\">{field.maxValue}</span>
+                    <span className="property-value">{field.maxValue}</span>
                   </div>
                 )}
                 
                 {field.avgValue !== undefined && (
                   <div className="property">
                     <label>Average:</label>
-                    <span className="property-value\">{field.avgValue.toFixed(2)}</span>
+                    <span className="property-value">{field.avgValue.toFixed(2)}</span>
                   </div>
                 )}
               </>
@@ -232,15 +215,15 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
         {relationships.map((rel, index) => (
           <div key={index} className="relationship-item">
             <div className="relationship-header">
-              <span className="relationship-type\">{rel.type.replace('_', ' ')}</span>
+              <span className="relationship-type">{rel.type.replace('_', ' ')}</span>
               <span className="relationship-strength">
                 Strength: {Math.round(rel.strength * 100)}%
               </span>
             </div>
             <div className="relationship-fields">
-              <span className="field-name\">{rel.sourceField}</span>
-              <span className="relationship-arrow\">→</span>
-              <span className="field-name\">{rel.targetField}</span>
+              <span className="field-name">{rel.sourceField}</span>
+              <span className="relationship-arrow">→</span>
+              <span className="field-name">{rel.targetField}</span>
             </div>
           </div>
         ))}
@@ -266,14 +249,14 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
         <div className="summary-stats">
           <div className="stat-card">
             <h4>Dataset Size</h4>
-            <div className="stat-value\">{schemaData.totalRows.toLocaleString()}</div>
-            <div className="stat-label\">rows</div>
+            <div className="stat-value">{schemaData.totalRows.toLocaleString()}</div>
+            <div className="stat-label">rows</div>
           </div>
           
           <div className="stat-card">
             <h4>Fields</h4>
-            <div className="stat-value\">{schemaData.totalColumns}</div>
-            <div className="stat-label\">columns</div>
+            <div className="stat-value">{schemaData.totalColumns}</div>
+            <div className="stat-label">columns</div>
           </div>
           
           <div className="stat-card">
@@ -289,8 +272,8 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
           
           <div className="stat-card">
             <h4>Avg Confidence</h4>
-            <div className="stat-value\">{Math.round(avgConfidence * 100)}%</div>
-            <div className="stat-label\">detection</div>
+            <div className="stat-value">{Math.round(avgConfidence * 100)}%</div>
+            <div className="stat-label">detection</div>
           </div>
         </div>
         
@@ -300,13 +283,13 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
             {Object.entries(typeDistribution).map(([type, count]) => (
               <div key={type} className="type-bar">
                 <div className="type-info">
-                  <span className="type-icon\">{getFieldTypeIcon(type)}</span>
-                  <span className="type-name\">{type}</span>
-                  <span className="type-count\">({count})</span>
+                  <span className="type-icon">{getFieldTypeIcon(type)}</span>
+                  <span className="type-name">{type}</span>
+                  <span className="type-count">({count})</span>
                 </div>
                 <div className="type-bar-container">
                   <div 
-                    className="type-bar-fill\"
+                    className="type-bar-fill"
                     style={{ 
                       width: `${(count / fields.length) * 100}%`,
                       backgroundColor: `hsl(${Object.keys(typeDistribution).indexOf(type) * 60}, 70%, 60%)`
@@ -322,13 +305,13 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
           <h4>Field Characteristics</h4>
           <div className="characteristics-grid">
             <div className="characteristic">
-              <span className="characteristic-label\">Nullable Fields:</span>
+              <span className="characteristic-label">Nullable Fields:</span>
               <span className="characteristic-value">
                 {nullableCount} ({Math.round((nullableCount / fields.length) * 100)}%)
               </span>
             </div>
             <div className="characteristic">
-              <span className="characteristic-label\">Unique Fields:</span>
+              <span className="characteristic-label">Unique Fields:</span>
               <span className="characteristic-value">
                 {uniqueCount} ({Math.round((uniqueCount / fields.length) * 100)}%)
               </span>
@@ -344,7 +327,7 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
       <div className="schema-viewer-overlay">
         <div className="schema-viewer-modal">
           <div className="schema-loading">
-            <div className="loading-spinner\"></div>
+            <div className="loading-spinner"></div>
             <p>Loading schema information...</p>
           </div>
         </div>
@@ -380,10 +363,9 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
   }
 
   return (
-    <div className="schema-viewer-overlay">
-      <div className="schema-viewer-modal">
+    <div className="schema-viewer-container">
         <div className="schema-viewer-header">
-          <h2>Dataset Schema</h2>
+
           <div className="view-mode-tabs">
             <button
               className={viewMode === 'summary' ? 'active' : ''}
@@ -432,13 +414,13 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
                         <span className="field-icon">
                           {getFieldTypeIcon(field.type)}
                         </span>
-                        <span className="field-name\">{field.name}</span>
-                        <span className="field-type\">{field.type}</span>
+                        <span className="field-name">{field.name}</span>
+                        <span className="field-type">{field.type}</span>
                       </div>
                       <div className="field-indicators">
-                        {field.nullable && <span className="indicator nullable\">nullable</span>}
-                        {field.unique && <span className="indicator unique\">unique</span>}
-                        {field.pattern && <span className="indicator pattern\">{field.pattern}</span>}
+                        {field.nullable && <span className="indicator nullable">nullable</span>}
+                        {field.unique && <span className="indicator unique">unique</span>}
+                        {field.pattern && <span className="indicator pattern">{field.pattern}</span>}
                       </div>
                     </div>
                     
@@ -451,7 +433,6 @@ const SchemaViewer: React.FC<SchemaViewerProps> = ({ dataset, onClose }) => {
           
           {viewMode === 'relationships' && renderRelationships()}
         </div>
-      </div>
     </div>
   );
 };

@@ -40,10 +40,11 @@ export const authService = {
     }
   },
 
-  async register(data: RegisterData): Promise<{ user: User; token: string }> {
+  async register(data: RegisterData): Promise<void> {
     try {
-      const response = await api.post<ApiResponse<{ user: User; token: string }>>('/auth/register', data);
-      return response.data.data!;
+      // For OTP flow, registration should not return a token
+      // The user will verify their email and get a token via OTP verification
+      await api.post<ApiResponse<void>>('/auth/register', data);
     } catch (error: any) {
       throw new Error(error.response?.data?.error?.message || 'Registration failed');
     }
@@ -74,6 +75,17 @@ export const authService = {
       throw new Error(
         error.response?.data?.error?.message ||
         'Failed to send password reset email'
+      );
+    }
+  },
+
+  async resetPassword(email: string, password: string): Promise<void> {
+    try {
+      await api.post<ApiResponse<void>>('/auth/reset-password', { email, password });
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+        'Failed to reset password'
       );
     }
   },

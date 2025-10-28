@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   forgotPassword,
+  verifyForgotPasswordOtp,
+  resetPassword,
   register,
   verifyOTP,
   resendOTP,
@@ -30,6 +32,8 @@ router.post('/verify-otp', validateVerifyOTP, handleValidationErrors, verifyOTP)
 router.post('/resend-otp', validateResendOTP, handleValidationErrors, resendOTP);
 router.post('/login', validateLogin, handleValidationErrors, login);
 router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password/verify', verifyForgotPasswordOtp);
+router.post('/reset-password', resetPassword);
 // Protected routes  
 router.post('/logout', 
   authenticate, 

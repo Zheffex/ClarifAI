@@ -72,7 +72,9 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 app.use(cors({
-  origin: env.cors.frontendUrl,
+  origin: [env.cors.frontendUrl,
+    'http://localhost:3000',
+  ],
   credentials: true
 }));
 // Apply rate limiting only to API routes in production

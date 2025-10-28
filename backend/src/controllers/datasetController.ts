@@ -185,13 +185,83 @@ export const uploadDataset = asyncHandler(async (req: Request, res: Response): P
   } catch (error: any) {
     logger.error('Dataset upload error:', error);
     
-    // If dataset creation failed but file was uploaded, clean up
-    // This would be handled by a cleanup job in production
-    
-    throw new AppError(
-      error.message || 'Failed to process dataset',
-      500
-    );
+    // Create a dataset record with failed status to show the error to the user
+    try {
+      let fileId = null;
+      
+      // Try to get the file ID if it was already uploaded
+      if (req.body.fileId) {
+        fileId = req.body.fileId;
+      }
+      
+      // If no file ID, upload the file first (file is already in memory)
+      if (!fileId && file) {
+        try {
+          fileId = await fileUploadService.uploadFile(
+            file.buffer,
+            file.originalname,
+            {
+              originalName: file.originalname,
+              mimeType: file.mimetype,
+              size: file.size,
+              uploadedBy: user._id.toString(),
+              uploadedAt: new Date()
+            }
+          );
+        } catch (uploadError) {
+          logger.error('Failed to save file to GridFS:', uploadError);
+          // Continue without fileId
+        }
+      }
+      
+      // Create dataset with failed status
+      const failedDataset = new Dataset({
+        name: name || file?.originalname || 'Unknown Dataset',
+        description: description || 'Failed to process dataset',
+        fileId: fileId,
+        uploadedBy: user._id,
+        organizationId: user.organizationId || new mongoose.Types.ObjectId(),
+        dataSchema: {
+          fields: [],
+          relationships: [],
+          detectedAt: new Date(),
+          confidence: 0
+        },
+        metadata: {
+          size: file?.size || 0,
+          type: file?.mimetype?.includes('csv') ? 'csv' : 
+                file?.mimetype?.includes('json') ? 'json' : 
+                file?.mimetype?.includes('sheet') || file?.mimetype?.includes('excel') ? 'xlsx' : 'unknown',
+          rows: 0,
+          columns: 0,
+          encoding: 'utf-8'
+        },
+        processingStatus: 'failed',
+        processingError: error.message || 'Failed to process dataset',
+        tags: tags || [],
+        isPublic: false,
+        accessPermissions: []
+      });
+      
+      await failedDataset.save();
+      logger.info(`Created failed dataset record with ID: ${failedDataset._id}`);
+      
+      // Return success response with failed dataset
+      res.status(200).json({
+        success: true,
+        data: failedDataset,
+        message: 'Dataset uploaded but processing failed'
+      });
+      return;
+    } catch (createError: any) {
+      logger.error('Failed to create failed dataset record:', createError);
+      
+      // If we can't even create the failed record, throw the original error
+      throw new AppError(
+        error.message || 'Failed to process dataset',
+        500
+      );
+    }
   }
 });
 

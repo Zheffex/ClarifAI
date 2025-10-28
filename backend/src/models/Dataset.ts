@@ -26,7 +26,7 @@ export interface IDataset extends Document {
   organizationId: mongoose.Types.ObjectId;
   dataSchema: Record<string, any>;
   metadata: IDatasetMetadata;
-  processingStatus: 'pending' | 'processing' | 'ready' | 'error';
+  processingStatus: 'pending' | 'processing' | 'ready' | 'failed' | 'error';
   processingError?: string;
   tags: string[];
   isPublic: boolean;
@@ -148,8 +148,8 @@ const datasetSchema = new Schema<IDataset>({
   processingStatus: {
     type: String,
     enum: {
-      values: ['pending', 'processing', 'ready', 'error'],
-      message: 'Processing status must be pending, processing, ready, or error'
+      values: ['pending', 'processing', 'ready', 'failed', 'error'],
+      message: 'Processing status must be pending, processing, ready, failed, or error'
     },
     required: true,
     default: 'pending'

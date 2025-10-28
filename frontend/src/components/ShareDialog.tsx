@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { X, Search, Plus, Trash2, Settings, Users, Lock, Globe } from 'lucide-react';
+import { collaborationService, ShareResourceRequest } from '../../services/collaboration';
+import { authService } from '../../services/authService';
 import './ShareDialog.css';
 
 interface User {
@@ -12,25 +14,9 @@ interface User {
 interface ShareDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  resourceType: 'dataset' | 'analysis';
+  resourceType: 'dataset' | 'analysis' | 'dashboard';
   resourceId: string;
-  resourceName: string;
-  onShare: (shareData: ShareData) => Promise<void>;
-}
-
-interface ShareData {
-  participants: Array<{
-    userId: string;
-    permissions: string[];
-  }>;
-  settings: {
-    allowComments: boolean;
-    allowAnnotations: boolean;
-    allowEditing: boolean;
-    requireApproval: boolean;
-    isPublic: boolean;
-    expiresAt?: Date;
-  };
+  resourceName?: string;
 }
 
 const ShareDialog: React.FC<ShareDialogProps> = ({
@@ -38,221 +24,269 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
   onClose,
   resourceType,
   resourceId,
-  resourceName,
-  onShare
+  resourceName
 }) => {
-  const { token } = useAuth();
-  const [participants, setParticipants] = useState<Array<{ user: User; permissions: string[] }>>([]);
-  const [emailInput, setEmailInput] = useState('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<{ userId: string; permissions: string[] }[]>([]);
   const [settings, setSettings] = useState({
     allowComments: true,
     allowAnnotations: true,
     allowEditing: false,
     requireApproval: false,
     isPublic: false,
-    expiresAt: undefined as Date | undefined
+    expiresAt: ''
   });
-  const [isSharing, setIsSharing] = useState(false);
-  const [error, setError] = useState('');
-
-  const permissionOptions = [
-    { value: 'view', label: 'View only', description: 'Can view the resource' },
-    { value: 'comment', label: 'Comment', description: 'Can view and comment' },
-    { value: 'edit', label: 'Edit', description: 'Can view, comment, and edit' },
-    { value: 'admin', label: 'Admin', description: 'Full access including sharing' }
-  ];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      // Reset form when dialog closes
-      setParticipants([]);
-      setEmailInput('');
-      setSearchResults([]);
-      setError('');
+    if (isOpen) {
+      loadUsers();
+    }
+  }, [isOpen]);
+
+  const loadUsers = async () => {
+    try {
+      setSearching(true);
+      const response = await authService.searchUsers('');
+      setUsers(response.data.users || []);
+    } catch (err: any) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const searchUsers = async (term: string) => {
+    if (!term.trim()) {
+      loadUsers();
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const response = await authService.searchUsers(term);
+      setUsers(response.data.users || []);
+    } catch (err: any) {
+      console.error('Failed to search users:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    searchUsers(term);
+  };
+
+  const addUser = (user: User) => {
+    const exists = selectedUsers.find(u => u.userId === user._id);
+    if (!exists) {
+      setSelectedUsers(prev => [...prev, {
+        userId: user._id,
+        permissions: ['read']
+      }]);
+    }
+  };
+
+  const removeUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(u => u.userId !== userId));
+  };
+
+  const updateUserPermissions = (userId: string, permissions: string[]) => {
+    setSelectedUsers(prev => prev.map(u => 
+      u.userId === userId ? { ...u, permissions } : u
+    ));
+  };
+
+  const handleShare = async () => {
+    if (selectedUsers.length === 0) {
+      setError('Please select at least one user to share with');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const shareData: ShareResourceRequest = {
+        resourceType,
+        resourceId,
+        participants: selectedUsers,
+        settings: {
+          ...settings,
+          expiresAt: settings.expiresAt ? new Date(settings.expiresAt).toISOString() : undefined
+        }
+      };
+
+      await collaborationService.shareResource(shareData);
+      
+      // Reset form
+      setSelectedUsers([]);
       setSettings({
         allowComments: true,
         allowAnnotations: true,
         allowEditing: false,
         requireApproval: false,
         isPublic: false,
-        expiresAt: undefined
+        expiresAt: ''
       });
-    }
-  }, [isOpen]);
-
-  const searchUsers = async (email: string) => {
-    if (!email.trim() || !token) return;
-    
-    setIsSearching(true);
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/search?email=${encodeURIComponent(email)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      setSearchTerm('');
       
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.data.users || []);
-      }
-    } catch (error) {
-      console.error('Failed to search users:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmailInput(value);
-    
-    if (value.length > 2) {
-      const debounceTimeout = setTimeout(() => {
-        searchUsers(value);
-      }, 300);
-      return () => clearTimeout(debounceTimeout);
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const addParticipant = (user: User) => {
-    const exists = participants.find(p => p.user._id === user._id);
-    if (!exists) {
-      setParticipants(prev => [...prev, { user, permissions: ['view'] }]);
-      setEmailInput('');
-      setSearchResults([]);
-    }
-  };
-
-  const removeParticipant = (userId: string) => {
-    setParticipants(prev => prev.filter(p => p.user._id !== userId));
-  };
-
-  const updateParticipantPermissions = (userId: string, permissions: string[]) => {
-    setParticipants(prev => prev.map(p => 
-      p.user._id === userId ? { ...p, permissions } : p
-    ));
-  };
-
-  const handleShare = async () => {
-    if (participants.length === 0) {
-      setError('Please add at least one participant');
-      return;
-    }
-
-    setIsSharing(true);
-    setError('');
-    
-    try {
-      const shareData: ShareData = {
-        participants: participants.map(p => ({
-          userId: p.user._id,
-          permissions: p.permissions
-        })),
-        settings
-      };
-      
-      await onShare(shareData);
       onClose();
-    } catch (error: any) {
-      setError(error.message || 'Failed to share resource');
+    } catch (err: any) {
+      setError(err.message || 'Failed to share resource');
     } finally {
-      setIsSharing(false);
+      setLoading(false);
     }
+  };
+
+  const getPermissionOptions = () => [
+    { value: 'read', label: 'Read', description: 'View the resource' },
+    { value: 'comment', label: 'Comment', description: 'Add comments' },
+    { value: 'annotate', label: 'Annotate', description: 'Add annotations' },
+    { value: 'edit', label: 'Edit', description: 'Modify the resource' },
+    { value: 'admin', label: 'Admin', description: 'Full control' }
+  ];
+
+  const getPermissionDescription = (permission: string) => {
+    const options = getPermissionOptions();
+    return options.find(opt => opt.value === permission)?.description || '';
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="share-dialog-overlay\" onClick={onClose}>
-      <div className="share-dialog\" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="share-dialog">
         <div className="dialog-header">
-          <h2>Share {resourceType}</h2>
-          <button className="close-button\" onClick={onClose}>×</button>
-        </div>
-        
-        <div className="dialog-content">
-          <div className="resource-info">
-            <p>Sharing: <strong>{resourceName}</strong></p>
-          </div>
-
-          <div className="participants-section">
-            <h3>Add Participants</h3>
-            
-            <div className="user-search">
-              <input
-                type="email\"
-                value={emailInput}
-                onChange={handleEmailChange}
-                placeholder="Enter email address to search users...\"
-                className="search-input\"
-              />
-              
-              {isSearching && <div className="search-loading\">Searching...</div>}
-              
-              {searchResults.length > 0 && (
-                <div className="search-results">
-                  {searchResults.map(user => (
-                    <div 
-                      key={user._id}
-                      className="search-result"
-                      onClick={() => addParticipant(user)}
-                    >
-                      <div className="user-info">
-                        <span className="user-name">{user.firstName} {user.lastName}</span>
-                        <span className="user-email">{user.email}</span>
-                      </div>
-                      <button className="add-button">Add</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {participants.length > 0 && (
-              <div className="participants-list">
-                <h4>Participants ({participants.length})</h4>
-                {participants.map(participant => (
-                  <div key={participant.user._id} className="participant-item">
-                    <div className="participant-info">
-                      <span className="participant-name">
-                        {participant.user.firstName} {participant.user.lastName}
-                      </span>
-                      <span className="participant-email">{participant.user.email}</span>
-                    </div>
-                    
-                    <div className="participant-controls">
-                      <select
-                        value={participant.permissions[0] || 'view'}
-                        onChange={(e) => updateParticipantPermissions(participant.user._id, [e.target.value])}
-                        className="permission-select"
-                      >
-                        {permissionOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      
-                      <button
-                        onClick={() => removeParticipant(participant.user._id)}
-                        className="remove-button"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="header-content">
+            <h2>
+              <Users className="header-icon" />
+              Share {resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}
+            </h2>
+            {resourceName && (
+              <p className="resource-name">{resourceName}</p>
             )}
           </div>
+          <button className="close-button" onClick={onClose}>
+            <X className="close-icon" />
+          </button>
+        </div>
+
+        <div className="dialog-content">
+          {error && (
+            <div className="error-message">
+              <p>{error}</p>
+              <button onClick={() => setError(null)}>Dismiss</button>
+            </div>
+          )}
+
+          <div className="share-section">
+            <h3>Add People</h3>
+            <div className="search-container">
+              <Search className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+              {searching && <div className="search-spinner"></div>}
+            </div>
+
+            <div className="users-list">
+              {users.length === 0 ? (
+                <div className="empty-users">
+                  <p>No users found</p>
+                </div>
+              ) : (
+                users.map(user => {
+                  const isSelected = selectedUsers.some(u => u.userId === user._id);
+                  return (
+                    <div 
+                      key={user._id} 
+                      className={`user-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => !isSelected && addUser(user)}
+                    >
+                      <div className="user-avatar">
+                        {user.firstName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="user-info">
+                        <div className="user-name">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div className="user-email">{user.email}</div>
+                      </div>
+                      {isSelected && (
+                        <div className="selected-indicator">
+                          <Plus className="selected-icon" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {selectedUsers.length > 0 && (
+            <div className="selected-section">
+              <h3>Selected People ({selectedUsers.length})</h3>
+              <div className="selected-users">
+                {selectedUsers.map(selectedUser => {
+                  const user = users.find(u => u._id === selectedUser.userId);
+                  return (
+                    <div key={selectedUser.userId} className="selected-user-item">
+                      <div className="user-info">
+                        <div className="user-avatar">
+                          {user?.firstName.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div className="user-details">
+                          <div className="user-name">
+                            {user ? `${user.firstName} ${user.lastName}` : 'Unknown User'}
+                          </div>
+                          <div className="user-email">{user?.email || selectedUser.userId}</div>
+                        </div>
+                      </div>
+                      <div className="permissions-selector">
+                        <select
+                          value={selectedUser.permissions[0] || 'read'}
+                          onChange={(e) => updateUserPermissions(selectedUser.userId, [e.target.value])}
+                          className="permissions-select"
+                        >
+                          {getPermissionOptions().map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="permission-description">
+                          {getPermissionDescription(selectedUser.permissions[0] || 'read')}
+                        </div>
+                      </div>
+                      <button 
+                        className="remove-button"
+                        onClick={() => removeUser(selectedUser.userId)}
+                      >
+                        <Trash2 className="remove-icon" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="settings-section">
-            <h3>Collaboration Settings</h3>
-            
+            <h3>
+              <Settings className="section-icon" />
+              Collaboration Settings
+            </h3>
             <div className="settings-grid">
               <label className="setting-item">
                 <input
@@ -260,81 +294,93 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
                   checked={settings.allowComments}
                   onChange={(e) => setSettings(prev => ({ ...prev, allowComments: e.target.checked }))}
                 />
-                <span>Allow comments</span>
+                <div className="setting-content">
+                  <div className="setting-label">Allow Comments</div>
+                  <div className="setting-description">Participants can add comments</div>
+                </div>
               </label>
-              
+
               <label className="setting-item">
                 <input
                   type="checkbox"
                   checked={settings.allowAnnotations}
                   onChange={(e) => setSettings(prev => ({ ...prev, allowAnnotations: e.target.checked }))}
                 />
-                <span>Allow annotations</span>
+                <div className="setting-content">
+                  <div className="setting-label">Allow Annotations</div>
+                  <div className="setting-description">Participants can add annotations</div>
+                </div>
               </label>
-              
+
               <label className="setting-item">
                 <input
                   type="checkbox"
                   checked={settings.allowEditing}
                   onChange={(e) => setSettings(prev => ({ ...prev, allowEditing: e.target.checked }))}
                 />
-                <span>Allow editing</span>
+                <div className="setting-content">
+                  <div className="setting-label">Allow Editing</div>
+                  <div className="setting-description">Participants can modify the resource</div>
+                </div>
               </label>
-              
+
               <label className="setting-item">
                 <input
                   type="checkbox"
                   checked={settings.requireApproval}
                   onChange={(e) => setSettings(prev => ({ ...prev, requireApproval: e.target.checked }))}
                 />
-                <span>Require approval for changes</span>
+                <div className="setting-content">
+                  <div className="setting-label">Require Approval</div>
+                  <div className="setting-description">Changes need approval before applying</div>
+                </div>
               </label>
-              
+
               <label className="setting-item">
                 <input
                   type="checkbox"
                   checked={settings.isPublic}
                   onChange={(e) => setSettings(prev => ({ ...prev, isPublic: e.target.checked }))}
                 />
-                <span>Make public</span>
+                <div className="setting-content">
+                  <div className="setting-label">
+                    <Globe className="setting-icon" />
+                    Make Public
+                  </div>
+                  <div className="setting-description">Anyone with the link can view</div>
+                </div>
               </label>
-            </div>
-            
-            <div className="expiry-setting">
-              <label>
-                <span>Expires at (optional):</span>
+
+              <div className="setting-item">
+                <div className="setting-content">
+                  <div className="setting-label">Expiration Date</div>
+                  <div className="setting-description">When this collaboration should end</div>
+                </div>
                 <input
                   type="datetime-local"
-                  value={settings.expiresAt ? settings.expiresAt.toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setSettings(prev => ({ 
-                    ...prev, 
-                    expiresAt: e.target.value ? new Date(e.target.value) : undefined 
-                  }))}
-                  className="datetime-input"
+                  value={settings.expiresAt}
+                  onChange={(e) => setSettings(prev => ({ ...prev, expiresAt: e.target.value }))}
+                  className="expiration-input"
                 />
-              </label>
+              </div>
             </div>
           </div>
-
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
         </div>
-        
+
         <div className="dialog-footer">
           <button 
+            className="btn btn-outline"
             onClick={onClose}
-            className="cancel-button"
-            disabled={isSharing}
+            disabled={loading}
           >
             Cancel
           </button>
           <button 
+            className="btn btn-primary"
             onClick={handleShare}
-            className="share-button"
-            disabled={isSharing || participants.length === 0}
+            disabled={loading || selectedUsers.length === 0}
           >
-            {isSharing ? 'Sharing...' : 'Share'}
+            {loading ? 'Sharing...' : 'Share Resource'}
           </button>
         </div>
       </div>

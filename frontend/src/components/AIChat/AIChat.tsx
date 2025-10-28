@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NLPService, NLPResponse } from '../../services/nlpService';
 import { aiService } from '../../services/aiService';
 import { Dataset } from '../../types';
 import './AIChat.css';
-import { ChevronDown, ChevronUp, LucideClockFading, Send } from 'lucide-react';
+import { ChevronDown, LucideClockFading, Send, Zap } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
-  response?: NLPResponse;
 }
 
 interface AIChatProps {
@@ -27,7 +25,7 @@ const AIChat: React.FC<AIChatProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,18 +65,40 @@ const AIChat: React.FC<AIChatProps> = ({
     setIsLoading(true);
 
     try {
-      const nlpResponse = await NLPService.processQuery(userMessage.content, datasets);
+      // Call the backend AI service
+      const response = await aiService.chatCompletion(userMessage.content, {
+        datasets: datasets
+      });
+      
+      // Debug: Log the response structure
+      console.log('AI Response structure:', response);
+      
+      // Safely extract the response content as a string
+      let responseContent = 'I apologize, but I couldn\'t generate a response. Please try again.';
+      
+      if (response && response.data) {
+        if (typeof response.data.response === 'string') {
+          responseContent = response.data.response;
+        } else if (typeof response.data === 'string') {
+          responseContent = response.data;
+        } else if (response.response && typeof response.response === 'string') {
+          responseContent = response.response;
+        }
+      }
+      
+      // Format the response to look like normal human text
+      const formattedContent = formatAIResponse(responseContent);
       
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
         type: 'ai',
-        content: generateAIResponse(nlpResponse),
-        timestamp: new Date(),
-        response: nlpResponse
+        content: formattedContent,
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
+      console.error('AI Service Error:', error);
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         type: 'ai',
@@ -90,20 +110,6 @@ const AIChat: React.FC<AIChatProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const generateAIResponse = (nlpResponse: NLPResponse): string => {
-    let response = nlpResponse.interpretation;
-    
-    if (nlpResponse.confidence < 0.6) {
-      response += ' However, I\'m not entirely sure I understood correctly.';
-    }
-    
-    if (nlpResponse.suggestedActions.length > 0) {
-      response += ' Here are some actions I can help you with:';
-    }
-    
-    return response;
   };
 
   const handleActionClick = (action: any) => {
@@ -123,86 +129,42 @@ const AIChat: React.FC<AIChatProps> = ({
     return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatAIResponse = (response: string): string => {
+    return response
+      // Remove markdown headers (##, ###, etc.)
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove bold/italic markdown (**text**, *text*)
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      // Remove horizontal rules (---)
+      .replace(/^---+$/gm, '')
+      // Remove code blocks (```code```)
+      .replace(/```[\s\S]*?```/g, '')
+      // Remove inline code (`code`)
+      .replace(/`([^`]+)`/g, '$1')
+      // Remove bullet points and list markers
+      .replace(/^[\s]*[-*+]\s+/gm, '• ')
+      .replace(/^\d+\.\s+/gm, '')
+      // Clean up multiple newlines
+      .replace(/\n{3,}/g, '\n\n')
+      // Trim whitespace
+      .trim();
+  };
+
   const renderMessage = (message: ChatMessage) => {
+    // Ensure content is always a string
+    const content = typeof message.content === 'string' ? message.content : String(message.content || '');
+    
     return (
       <div key={message.id} className={`chat-message ${message.type}`}>
-        <div className="message-header">
-          <div className="message-avatar">
-            {message.type === 'user' ? '👤' : '🤖'}
-          </div>
-          <div className="message-info">
-            <span className="message-sender">
-              {message.type === 'user' ? 'You' : 'AI Assistant'}
-            </span>
-            <span className="message-time">
-              {formatTimestamp(message.timestamp)}
-            </span>
-          </div>
-        </div>
-        
         <div className="message-content">
-          <p>{message.content}</p>
-          
-          {message.response && (
-            <div className="message-actions">
-              {message.response.confidence < 0.6 && (
-                <div className="confidence-warning">
-                  ⚠️ I\'m not very confident about this interpretation (confidence: {Math.round(message.response.confidence * 100)}%)
-                </div>
-              )}
-              
-              {message.response.suggestedActions.length > 0 && (
-                <div className="suggested-actions">
-                  <h4>Suggested Actions:</h4>
-                  <div className="actions-list">
-                    {message.response.suggestedActions.map((action, index) => (
-                      <button
-                        key={index}
-                        className="action-button"
-                        onClick={() => handleActionClick(action)}
-                      >
-                        {getActionIcon(action.type)} {action.description}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {message.response.followUpQuestions && message.response.followUpQuestions.length > 0 && (
-                <div className="follow-up-questions">
-                  <h4>Follow-up questions:</h4>
-                  <div className="questions-list">
-                    {message.response.followUpQuestions.map((question, index) => (
-                      <button
-                        key={index}
-                        className="question-button"
-                        onClick={() => handleSuggestionClick(question)}
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <p>{content}</p>
         </div>
       </div>
     );
   };
 
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'chart': return '📊';
-      case 'filter': return '🔍';
-      case 'aggregation': return '📈';
-      case 'export': return '💾';
-      default: return '⚡';
-    }
-  };
-
   const getSampleQuestions = () => [
-    'Show me a bar chart of my data',
     'What are the trends in sales over time?',
     'Create a pie chart of categories',
     'Analyze the correlation between fields',
@@ -211,83 +173,76 @@ const AIChat: React.FC<AIChatProps> = ({
   ];
 
   return (
-    <div className={`ai-chat ${isExpanded ? 'expanded' : 'collapsed'} ${className}`}>
-      <div className="chat-header" onClick={() => setIsExpanded(!isExpanded)}>
+    <div className={`ai-chat ${isMinimized ? 'minimized' : 'expanded'} ${className}`}>
+      <div className="chat-header" onClick={() => setIsMinimized(!isMinimized)}>
         <div className="chat-title">
-          <span className="chat-icon">🤖</span>
-          <span>AI Assistant</span>
-          {!isExpanded && messages.length > 1 && (
-            <span className="message-count">{messages.length - 1}</span>
-          )}
+          <Zap className="chat-icon" />
+          {!isMinimized && <span>AI Assistant</span>}
         </div>
         <div className="chat-toggle">
-          {isExpanded ? <ChevronDown></ChevronDown> : <ChevronUp></ChevronUp>}
+          <img src="/logo192.png" alt="Toggle" className="toggle-icon" />
         </div>
       </div>
       
-      {isExpanded && (
+      {!isMinimized && (
         <div className="chat-content">
-          <div className="chat-messages">
-            {messages.map(renderMessage)}
+          <div className="chat-main">
+            <div className="chat-messages">
+              {messages.map(renderMessage)}
+              
+              {isLoading && (
+                <div className="chat-message ai loading">
+                  <div className="message-content">
+                    <div className="typing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
             
-            {isLoading && (
-              <div className="chat-message ai loading">
-                <div className="message-header">
-                  <div className="message-avatar">🤖</div>
-                  <div className="message-info">
-                    <span className="message-sender\">AI Assistant</span>
-                  </div>
-                </div>
-                <div className="message-content">
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
+            <form className="chat-input-form" onSubmit={handleSubmit}>
+              <div className="input-container">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Ask me anything about your data..."
+                  className="chat-input"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  className="send-button"
+                  disabled={!inputValue.trim() || isLoading}
+                >
+                  {isLoading ? <LucideClockFading className="send-icon" /> : <Send className="send-icon" />}
+                </button>
               </div>
-            )}
-            
-            <div ref={messagesEndRef} />
+            </form>
           </div>
           
-          {messages.length === 1 && (
-            <div className="sample-questions">
+          <div className="chat-sidebar">
+            <div className="suggestions-header">
               <h4>Try asking:</h4>
-              <div className="questions-grid">
-                {getSampleQuestions().map((question, index) => (
-                  <button
-                    key={index}
-                    className="sample-question\"
-                    onClick={() => handleSuggestionClick(question)}
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
             </div>
-          )}
-          
-          <form className="chat-input-form" onSubmit={handleSubmit}>
-            <div className="input-container">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask me anything about your data..."
-                className="chat-input"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                className="send-button"
-                disabled={!inputValue.trim() || isLoading}
-              >
-                {isLoading ? <LucideClockFading></LucideClockFading> : <Send></Send>}
-              </button>
+            <div className="suggestions-list">
+              {getSampleQuestions().map((question, index) => (
+                <button
+                  key={index}
+                  className="suggestion-item"
+                  onClick={() => handleSuggestionClick(question)}
+                >
+                  {question}
+                </button>
+              ))}
             </div>
-          </form>
+          </div>
         </div>
       )}
     </div>

@@ -7,6 +7,8 @@ import {
   updateDataset,
   deleteDataset,
   getDatasetPreview,
+  getDatasetSchema,
+  validateDatasetQuality,
   shareDataset,
   removeDatasetAccess,
   validateDatasetUpload,
@@ -117,6 +119,18 @@ router.delete('/:id',
 router.get('/:id/preview',
   requirePermission('datasets:read'),
   getDatasetPreview
+);
+
+// Get dataset schema
+router.get('/:id/schema',
+  requirePermission('datasets:read'),
+  getDatasetSchema
+);
+
+// Validate dataset quality
+router.get('/:id/validate',
+  requirePermission('datasets:read'),
+  validateDatasetQuality
 );
 
 // Share dataset with user

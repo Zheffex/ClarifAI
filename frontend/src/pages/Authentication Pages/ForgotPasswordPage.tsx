@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail } from 'lucide-react';
 import { authService } from "../../services/authService"; 
 import "./AuthPages.css";
 
@@ -15,6 +16,10 @@ const ForgotPasswordPage: React.FC = () => {
     try {
       // Call backend endpoint that sends reset email AND notification
       await authService.forgotPassword(email); 
+
+      // Store email and otpFlow in localStorage for OTP verification page
+      localStorage.setItem('email', email);
+      localStorage.setItem('otpFlow', 'forgotPassword');
 
       // Show success alert
       alert("✅ Password reset link sent to your email and notification triggered!");
@@ -40,14 +45,17 @@ const ForgotPasswordPage: React.FC = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="forgot-form">
-          <input
-            type="email"
-            placeholder="Enter Your Registered Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isSubmitting}
-          />
+          <div className="input-wrapper">
+            <Mail className="label-icon" />
+            <input
+              type="email"
+              placeholder="Enter Your Registered Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+          </div>
 
           <button type="submit" className="forgot-button" disabled={isSubmitting}>
             {isSubmitting ? "Sending..." : "Send"}
